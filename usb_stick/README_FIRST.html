@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medical Documentation Copilot USB — README FIRST / はじめにお読みください</title>
+<style>
+  :root { --accent: #2a6f97; --warn-bg: #fff3f0; --warn-line: #d9534f; }
+  body { font-family: -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+         max-width: 50rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.7; color: #222; background: #fff; }
+  h1 { font-size: 1.45rem; border-bottom: 3px solid var(--accent); padding-bottom: .4rem; }
+  h2 { font-size: 1.1rem; color: var(--accent); margin-top: 1.6rem; }
+  code { background: #f2f2f2; padding: .1rem .35rem; border-radius: 3px; font-size: .92em; }
+  table { border-collapse: collapse; width: 100%; margin: .6rem 0; }
+  th, td { border: 1px solid #ccc; padding: .45rem .6rem; text-align: left; vertical-align: top; font-size: .95rem; }
+  th { background: #eef4f8; }
+  .disclaimer { background: var(--warn-bg); border: 2px solid var(--warn-line); border-radius: 8px;
+                padding: .9rem 1.1rem; margin: 1rem 0; }
+  .disclaimer strong { color: #a12622; }
+  .lang { color: #666; font-weight: 600; }
+  footer { margin-top: 2rem; padding-top: .8rem; border-top: 1px solid #ddd; font-size: .85rem; color: #555; }
+  ol li { margin-bottom: .35rem; }
+</style>
+</head>
+<body>
+
+<h1>Medical Documentation Copilot USB<br>医療文書作成支援 USB パッケージ</h1>
+
+<div class="disclaimer">
+  <p><span class="lang">JA:</span> <strong>本ツールは下書き支援用の助言的ツールであり、臨床的検証は行われていません。
+  すべての出力は必ず医師が確認・修正・承認してください。</strong>
+  非医療機器（PMDA・プログラム医療機器の範囲外）として運用します。</p>
+  <p><span class="lang">EN:</span> <strong>Advisory drafting tool with no clinical validation.
+  A physician must review and confirm every output.</strong>
+  Operated as a non-medical-device (outside PMDA SaMD scope).
+  &rarr; <a href="docs/LICENSES/DISCLAIMER.md">docs/LICENSES/DISCLAIMER.md</a></p>
+</div>
+
+<h2>これは何？ / What is this?</h2>
+<p><span class="lang">JA:</span> このUSBメモリだけで完結する、完全オフラインの医療文書（退院サマリー・手術記録・
+看護記録・診療情報提供書など）の下書き作成支援ツールです。インストール不要、管理者権限不要、
+インターネット接続は使用しません。すべての処理はこのPC内 (<code>127.0.0.1</code>) で行われ、
+外部には何も送信されません。</p>
+<p><span class="lang">EN:</span> A fully offline drafting assistant for routine Japanese medical documents,
+running entirely from this USB stick. No installation, no admin rights, no internet.
+Everything stays on this PC (<code>127.0.0.1</code>); nothing is transmitted anywhere.</p>
+
+<h2>使い方（3ステップ） / How to use (3 steps)</h2>
+<ol>
+  <li><span class="lang">JA:</span> <code>START_WINDOWS.bat</code>（Windows）または
+      <code>START_MAC.command</code>（macOS）をダブルクリック。ブラウザが自動的に開きます。<br>
+      <span class="lang">EN:</span> Double-click <code>START_WINDOWS.bat</code> (Windows) or
+      <code>START_MAC.command</code> (macOS). Your browser opens automatically.</li>
+  <li><span class="lang">JA:</span> 文書プリセットを選び、診療メモを入力して生成します
+      （患者氏名・ID・住所・電話番号は入力しない）。<br>
+      <span class="lang">EN:</span> Pick a document preset, enter the clinical notes, generate
+      (never enter patient names, IDs, addresses, or phone numbers).</li>
+  <li><span class="lang">JA:</span> 下書きを医師が確認・修正してから転記し、
+      <code>STOP_WINDOWS.bat</code> / <code>STOP_MAC.command</code> で終了して安全に取り外します。<br>
+      <span class="lang">EN:</span> Physician reviews and corrects the draft, copies it out, then stops via
+      <code>STOP_WINDOWS.bat</code> / <code>STOP_MAC.command</code> and safely ejects.</li>
+</ol>
+<p>詳細 / Details:
+  <a href="docs/QUICKSTART_JA.md">クイックスタート（日本語）</a> ・
+  <a href="docs/QUICKSTART_EN.md">Quick Start (English)</a></p>
+
+<h2>同梱ドキュメント / Bundled documents</h2>
+<table>
+  <tr><th>File</th><th>内容 / Contents</th></tr>
+  <tr><td><a href="docs/QUICKSTART_JA.md">docs/QUICKSTART_JA.md</a></td>
+      <td>クイックスタート（日本語・3ステップ）</td></tr>
+  <tr><td><a href="docs/QUICKSTART_EN.md">docs/QUICKSTART_EN.md</a></td>
+      <td>Quick start (English, 3 steps)</td></tr>
+  <tr><td><a href="docs/WINDOWS_VALIDATION_CHECKLIST.md">docs/WINDOWS_VALIDATION_CHECKLIST.md</a></td>
+      <td>新しいWindows PCでの初回検証手順（SmartScreen対応を含む） /
+          First-run validation on a real Windows PC, incl. SmartScreen guidance</td></tr>
+  <tr><td><a href="docs/ENCRYPTION_NOTE_JA.md">docs/ENCRYPTION_NOTE_JA.md</a> ・
+          <a href="docs/ENCRYPTION_NOTE_EN.md">docs/ENCRYPTION_NOTE_EN.md</a></td>
+      <td>暗号化の推奨（ハードウェアキーパッド式ドライブ）と exFAT の理由 /
+          Hardware-keypad drive recommendation and exFAT rationale</td></tr>
+  <tr><td><a href="docs/CUSTODY_REGISTER_TEMPLATE.md">docs/CUSTODY_REGISTER_TEMPLATE.md</a></td>
+      <td>持ち出し管理台帳テンプレート / Drive custody register template</td></tr>
+  <tr><td><a href="docs/LICENSES/DISCLAIMER.md">docs/LICENSES/DISCLAIMER.md</a></td>
+      <td>免責事項（PMDA上の位置付けを含む） / Disclaimer incl. regulatory posture</td></tr>
+  <tr><td><a href="docs/LICENSES/MODEL_CARD_NOTES.md">docs/LICENSES/MODEL_CARD_NOTES.md</a></td>
+      <td>モデルカード注記（匿名化支援の限界を含む） / Model card notes incl. de-id limits</td></tr>
+  <tr><td><a href="docs/LICENSES/Apache-2.0.txt">docs/LICENSES/Apache-2.0.txt</a> ・
+          <a href="docs/LICENSES/llama.cpp-b9867-LICENSE.txt">docs/LICENSES/llama.cpp-b9867-LICENSE.txt</a></td>
+      <td>ライセンス全文（モデル: Apache-2.0 / エンジン: MIT） / Full license texts</td></tr>
+</table>
+
+<h2>運用上の必須事項 / Operating requirements</h2>
+<ol>
+  <li><span class="lang">JA:</span> ハードウェア暗号化ドライブ（PINキーパッド式）での運用と、
+      持ち出し管理台帳への記帳が必須です。<br>
+      <span class="lang">EN:</span> Deploy on a hardware-keypad encrypted drive and keep the
+      custody register up to date.</li>
+  <li><span class="lang">JA:</span> 利用履歴はスティック内 <code>audit/</code> フォルダに
+      改ざん検知可能な形式で自動記録されます。削除・編集しないでください。<br>
+      <span class="lang">EN:</span> Usage is auto-logged tamper-evidently in <code>audit/</code>.
+      Never delete or edit it.</li>
+  <li><span class="lang">JA:</span> 患者氏名・ID・住所・電話番号は入力禁止。<br>
+      <span class="lang">EN:</span> Patient names, IDs, addresses, and phone numbers must not be entered.</li>
+</ol>
+
+<footer>
+  med-usb — offline, non-Transformer (RWKV-7 / Granite hybrid) medical documentation copilot.
+  Servers bind <code>127.0.0.1</code> only / サーバーは 127.0.0.1（このPC内）のみ使用します。
+  このページはオフラインで表示できます / This page renders fully offline.
+</footer>
+
+</body>
+</html>

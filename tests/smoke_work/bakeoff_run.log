@@ -1,0 +1,14 @@
+=== bake-off: rwkv7-2.9B-world-q4_k_m.gguf (mode=raw, rwkv7, 2.9B, primary) on port 8090 ===
+  [rwkv7-2.9B-world-q4_k_m.gguf] taiin-summary: 4/5 markers, 68.3 tok/s, 4.5s wall
+  [rwkv7-2.9B-world-q4_k_m.gguf] operative-note: 1/4 markers, 67.7 tok/s, 8.4s wall
+  [rwkv7-2.9B-world-q4_k_m.gguf] nursing-record: 4/4 markers, 68.4 tok/s, 3.4s wall
+  [rwkv7-2.9B-world-q4_k_m.gguf] referral-letter: 3/4 markers, 68.3 tok/s, 6.3s wall
+  [rwkv7-2.9B-world-q4_k_m.gguf] deid-assist: 1/3 markers, 67.8 tok/s, 8.0s wall
+=== bake-off: granite-4.0-h-micro-Q4_K_M.gguf (mode=chat, mamba2-hybrid, 3B, fallback) on port 8090 ===
+  [granite-4.0-h-micro-Q4_K_M.gguf] taiin-summary: 5/5 markers, 61.5 tok/s, 9.1s wall
+  [granite-4.0-h-micro-Q4_K_M.gguf] operative-note: 4/4 markers, 61.6 tok/s, 9.8s wall
+  [granite-4.0-h-micro-Q4_K_M.gguf] nursing-record: 4/4 markers, 61.4 tok/s, 7.8s wall
+  [granite-4.0-h-micro-Q4_K_M.gguf] referral-letter: 4/4 markers, 61.3 tok/s, 11.1s wall
+  [granite-4.0-h-micro-Q4_K_M.gguf] deid-assist: 3/3 markers, 61.4 tok/s, 7.7s wall
+wrote /Users/osx/Documents/med_l_llm/tests/bakeoff_results.md
+BAKEOFF OK: results in /Users/osx/Documents/med_l_llm/tests/bakeoff_results.md

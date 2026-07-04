@@ -1,0 +1,15 @@
+=================================================
+ med-usb : offline medical documentation copilot
+ (stick root = folder containing this launcher)
+=================================================
+starting auditgw (UI http://127.0.0.1:8180/ , llm port 8080 , model granite-4.0-h-micro-Q4_K_M.gguf, 14 threads)
+gateway log: audit/gateway-mac.log
+waiting for the gateway to come up ...
+gateway is up. waiting for the model to load (large models can take minutes) ...
+model is ready.
+
+med-usb is running:  http://127.0.0.1:8180/
+Keep this window open while you work.
+To stop: double-click STOP_MAC.command (or press Ctrl+C here).
+
+session closed. You can close this window.

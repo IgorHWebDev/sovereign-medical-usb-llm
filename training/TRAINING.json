@@ -1,0 +1,85 @@
+{
+  "schema": "med-usb-training/v1",
+  "generatedAt": "2026-07-03T23:17:19Z",
+  "feasibilityBranch": "a-local-smoke",
+  "branchRationale": "Host is Apple M4 Pro, 24 GiB unified memory (sysctl hw.memsize=25769803776). mlx-lm ships native support for the target architecture (mlx_lm/models/granitemoehybrid.py present in 0.31.3), so a local QLoRA smoke run on the 4-bit MLX weights is feasible (peak ~9.86 GB during training). Branch (a) taken and completed.",
+  "target": {
+    "stickDefaultModel": "granite-4.0-h-micro-Q4_K_M.gguf",
+    "stickDefaultRepo": "ibm-granite/granite-4.0-h-micro-GGUF",
+    "architecture": "granitemoehybrid",
+    "archNote": "Mamba-2 / Transformer hybrid (non-standard-attention), confirmed live from ibm-granite/granite-4.0-h-micro/config.json: model_type=granitemoehybrid, architectures=[GraniteMoeHybridForCausalLM], 40 layers, hidden_size 2048.",
+    "trainingCheckpoint": {
+      "repo": "mlx-community/granite-4.0-h-micro-4bit",
+      "reason": "mlx-lm LoRA needs an MLX-layout checkpoint of the SAME model. This is the official mlx-community 4-bit MLX conversion of the stick default (Apache-2.0). QLoRA (LoRA over 4-bit frozen base) keeps peak memory ~9.9 GB.",
+      "license": "apache-2.0",
+      "localPath": "training/base_model",
+      "modelSafetensors": {
+        "file": "model.safetensors",
+        "sha256": "573654ce0613804f3e0e5ec692b039f907f13c88273dc08993b9adbeb04428f1",
+        "sizeBytes": 1796848117,
+        "checksumSource": "https://huggingface.co/api/models/mlx-community/granite-4.0-h-micro-4bit?blobs=true (LFS sha256 oid, read live 2026-07-03)"
+      }
+    }
+  },
+  "framework": {
+    "choice": "mlx-lm",
+    "version": "0.31.3",
+    "mlx": "0.31.2",
+    "mlxMetal": "0.31.2",
+    "python": "3.12.13",
+    "archSupportVerifiedLive": "GitHub ml-explore/mlx-lm mlx_lm/models/ listing on 2026-07-03 shows granite.py, granitemoehybrid.py, mamba.py, mamba2.py, rwkv7.py. The installed 0.31.3 wheel contains mlx_lm/models/granitemoehybrid.py; training loaded the model as granitemoehybrid and ran without arch errors.",
+    "transformersPin": "4.57.1",
+    "transformersPinReason": "mlx-lm 0.31.3 declares transformers>=5.0.0, but transformers 5.13.0 breaks the mlx_lm import (AutoTokenizer.register('NewlineTokenizer', ...) raises AttributeError). Pinned to 4.57.1, verified working end-to-end (train + fuse + generate) on 2026-07-04. Documented in requirements.txt."
+  },
+  "hardware": {
+    "model": "Mac16,8 (Apple M4 Pro)",
+    "ramBytes": 25769803776,
+    "ramGiB": 24,
+    "os": "darwin 25.5.0"
+  },
+  "smokeRun": {
+    "status": "completed",
+    "command": "training/run_smoke_lora.sh",
+    "config": "training/train_config.yaml",
+    "dataset": {
+      "source": "medqa_jp (Coldog2333/JMedBench), MIT, no PHI",
+      "sourceSha256": "d93d25cfaaa3a802b608e33fa2bcdd10d4d457e907c21ff26d4b973938aee7e9",
+      "trainExamples": 48,
+      "validExamples": 8,
+      "format": "chat messages (system/user/assistant), Japanese"
+    },
+    "iters": 15,
+    "batchSize": 4,
+    "numLayers": 8,
+    "fineTuneType": "lora (QLoRA over 4-bit base)",
+    "loraRank": 8,
+    "trainablePct": 0.094,
+    "lossFirst": 2.055,
+    "lossLast": 0.736,
+    "valLossFirst": 2.113,
+    "valLossLast": 1.061,
+    "lossFinite": true,
+    "lossDecreased": true,
+    "peakMemGiB": 9.856,
+    "adapter": "training/adapters/adapters.safetensors",
+    "lossLog": "training/logs/smoke_train.log"
+  },
+  "mergeConvert": {
+    "mergeScript": "training/fuse_and_convert.sh",
+    "mergeResult": "OK - adapter fused into MLX base weights -> training/fused_model/",
+    "ggufExportResult": "UNSUPPORTED_LOCALLY",
+    "ggufExportError": "mlx_lm fuse --export-gguf raises: 'Model type granitemoehybrid not supported for GGUF conversion.' (mlx_lm gguf exporter supports only llama/mixtral/mistral-family, and cannot export quantized source weights).",
+    "workingConvertPath": "Off-site: fuse the adapter into the ORIGINAL fp16/bf16 HF checkpoint, then llama.cpp convert_hf_to_gguf.py + llama-quantize Q4_K_M. Needs ~13 GB scratch; blocked locally by the disk gate. See REMOTE_RECIPE.md.",
+    "logFile": "training/logs/fuse_convert.log"
+  },
+  "eval": {
+    "script": "training/eval_tuned_vs_baseline.py",
+    "report": "evals/tuned_vs_baseline.md",
+    "items": 20,
+    "note": "Pipeline proof only. 20 held-out medqa_jp items (from END of corpus, disjoint from train/valid), greedy decode. No quality bar - a 15-step adapter on 48 examples cannot move real accuracy; real gains need the hospital gold set + off-site GPU SFT, then m7 bake-off + m9 re-validation."
+  },
+  "rwkv7Alternative": {
+    "documented": true,
+    "note": "The PRIMARY stick model RWKV-7 World 2.9B (arch rwkv7) is fine-tuned via its NATIVE trainer BlinkDL/RWKV-LM (state-tuning / LoRA / full SFT in PyTorch+CUDA), NOT mlx-lm's generic LoRA. mlx-lm does ship mlx_lm/models/rwkv7.py for inference/LoRA, but the reference RWKV-LM recipe is the documented path. See README_TRAINING.md 'RWKV-7 alternative' and REMOTE_RECIPE.md."
+  }
+}

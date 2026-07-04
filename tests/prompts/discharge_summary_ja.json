@@ -1,0 +1,44 @@
+{
+  "schema": "med-usb-test-case/v1",
+  "id": "discharge_summary_ja_smoke",
+  "preset": "taiin-summary",
+  "note_en": "Fully synthetic (fake) patient course for the m7 smoke test. Assertions are SHAPE assertions (section headers present, output is Japanese, non-empty) — never content assertions. No real patient data.",
+  "note_ja": "m7スモークテスト用の完全に架空の症例です。検証は形式（見出しの有無・日本語・非空）のみで、内容の正しさは検証しません。実在の患者情報は含まれません。",
+  "case_ja": {
+    "patient_basic": "72歳 女性 市中肺炎",
+    "admission_period": "2026年5月10日 〜 2026年5月21日",
+    "clinical_course": "発熱と咳嗽を主訴に5月10日入院。入院時 BT38.6℃ SpO2 91%（室内気）、右下肺野に湿性ラ音。胸部X線で右下肺野に浸潤影。CTRX点滴静注を開始し、酸素2L/分投与。5月14日解熱、炎症反応は改善傾向。5月18日に酸素投与終了。既往歴: 高血圧（アムロジピン5mg内服継続）。",
+    "discharge_plan": "退院処方: アムロジピン5mg 1日1回。退院後は1週間後に外来受診予定。禁煙指導を実施。"
+  },
+  "input_text_ja": "以下の診療メモから退院サマリーの下書きを作成してください。\n\n【患者基本情報】72歳 女性 市中肺炎\n【入院期間】2026年5月10日 〜 2026年5月21日\n【入院経過メモ】発熱と咳嗽を主訴に5月10日入院。入院時 BT38.6℃ SpO2 91%（室内気）、右下肺野に湿性ラ音。胸部X線で右下肺野に浸潤影。CTRX点滴静注を開始し、酸素2L/分投与。5月14日解熱、炎症反応は改善傾向。5月18日に酸素投与終了。既往歴: 高血圧（アムロジピン5mg内服継続）。\n【退院時処方・退院後方針】退院処方: アムロジピン5mg 1日1回。退院後は1週間後に外来受診予定。禁煙指導を実施。",
+  "required_sections": [
+    "【患者】",
+    "【入院期間】",
+    "【主病名】"
+  ],
+  "all_sections": [
+    "【患者】",
+    "【入院期間】",
+    "【主病名】",
+    "【併存疾患】",
+    "【入院時主訴・現症】",
+    "【入院までの経過】",
+    "【入院後経過】",
+    "【実施した手術・処置】",
+    "【退院時処方】",
+    "【退院時の状態】",
+    "【退院後の方針・外来予定】"
+  ],
+  "min_sections_present": 5,
+  "min_output_chars": 80,
+  "assert_japanese": true,
+  "assertion_note_en": "PASS = every required_sections header present AND >= min_sections_present of all_sections present AND output length >= min_output_chars AND output contains Japanese (hiragana/katakana/kanji). Calibrated live on rwkv7-2.9B-world Q4_K_M @ llama.cpp b9867 (seed 42 => 7/11 sections, deterministic).",
+  "generation": {
+    "n_predict": 700,
+    "temperature": 1.0,
+    "top_p": 0.3,
+    "presence_penalty": 0.5,
+    "seed": 42,
+    "stop": ["\n\nUser:", "User:"]
+  }
+}

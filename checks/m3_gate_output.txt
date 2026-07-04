@@ -1,0 +1,13 @@
+# m3 live engine gate evidence
+# timestamp: 2026-07-03T21:50:56Z
+# engine: llama.cpp b9867 llama-server (mac-arm64, shipped at usb_stick/bin/mac-arm64/llama-server), model: rwkv7-2.9B-world-q4_k_m.gguf
+# bind: 127.0.0.1:8093, health check returned {"status":"ok"}
+# endpoint: /completion (raw RWKV World template per model_meta.json chatTemplateMode=raw)
+# prompt: User: 糖尿病とは何ですか?一文の日本語で説明してください。 / Assistant:
+# perf: predicted 21 tokens at 68.51 tok/s
+--- model output ---
+糖尿病とは、血糖値が高い状態を指します。
+--- assessment ---
+Coherent one-sentence Japanese medical answer (defines diabetes as a state of
+elevated blood glucose). RWKV-7 primary passes the live engine gate; no
+primary/fallback swap required.

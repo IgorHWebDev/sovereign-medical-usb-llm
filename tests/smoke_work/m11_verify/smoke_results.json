@@ -1,0 +1,172 @@
+{
+  "schema": "med-usb/eval/baseline/v1",
+  "generated_at": "2026-07-03T23:32:06Z",
+  "engine_version": "llama.cpp b9867 (152d337fa)",
+  "host": "build Mac (Apple Silicon)",
+  "temperature": 0.0,
+  "seed": 42,
+  "smoke": true,
+  "subset_size": 5,
+  "subset_ids": [
+    "test_709",
+    "test_890",
+    "test_708",
+    "test_1266",
+    "test_617"
+  ],
+  "dataset": {
+    "id": "eval-jmmlu-medical",
+    "title": "JMMLU medical subsets (Japanese medical MCQA)",
+    "license": "CC-BY-SA-4.0",
+    "local_path": "datasets/eval/jmmlu_medical_test.jsonl",
+    "sha256": "8274725a2c36c0a371f1950fa8fff83cf6ea0beda4b92e3a0a8d7f6b7aeee3ab",
+    "records_total": 1271
+  },
+  "models": [
+    {
+      "model": "rwkv7-2.9B-world-q4_k_m.gguf",
+      "arch": "rwkv7",
+      "params": "2.9B",
+      "role": "primary",
+      "mode": "raw",
+      "n_items": 5,
+      "correct": 0,
+      "accuracy": 0.0,
+      "parseable": 5,
+      "format_adherence": 1.0,
+      "avg_gen_tok_s": 72.65,
+      "gen_tokens_total": 80,
+      "runtime_s": 2.6,
+      "items": [
+        {
+          "sample_id": "test_709",
+          "topic": "college_medicine",
+          "gold_idx": 3,
+          "gold_letter": "D",
+          "pred_idx": 2,
+          "pred_letter": "C",
+          "correct": false,
+          "raw_output": "C. カロリーの高いスナック菓子を食",
+          "error": ""
+        },
+        {
+          "sample_id": "test_890",
+          "topic": "medical_genetics",
+          "gold_idx": 0,
+          "gold_letter": "A",
+          "pred_idx": 1,
+          "pred_letter": "B",
+          "correct": false,
+          "raw_output": "B. 失明性毛細血管拡張症\n説明",
+          "error": ""
+        },
+        {
+          "sample_id": "test_708",
+          "topic": "college_medicine",
+          "gold_idx": 1,
+          "gold_letter": "B",
+          "pred_idx": 0,
+          "pred_letter": "A",
+          "correct": false,
+          "raw_output": "A. グルコース。Q: 请将下文翻",
+          "error": ""
+        },
+        {
+          "sample_id": "test_1266",
+          "topic": "high_school_biology",
+          "gold_idx": 0,
+          "gold_letter": "A",
+          "pred_idx": 1,
+          "pred_letter": "B",
+          "correct": false,
+          "raw_output": "B. 肝細胞のDNAのほとんどは転写",
+          "error": ""
+        },
+        {
+          "sample_id": "test_617",
+          "topic": "college_medicine",
+          "gold_idx": 3,
+          "gold_letter": "D",
+          "pred_idx": 2,
+          "pred_letter": "C",
+          "correct": false,
+          "raw_output": "C. 女性がより早い年齢からトレーニング",
+          "error": ""
+        }
+      ]
+    },
+    {
+      "model": "granite-4.0-h-micro-Q4_K_M.gguf",
+      "arch": "mamba2-hybrid",
+      "params": "3B",
+      "role": "fallback",
+      "mode": "chat",
+      "n_items": 5,
+      "correct": 2,
+      "accuracy": 0.4,
+      "parseable": 5,
+      "format_adherence": 1.0,
+      "avg_gen_tok_s": 114.82,
+      "gen_tokens_total": 10,
+      "runtime_s": 1.8,
+      "items": [
+        {
+          "sample_id": "test_709",
+          "topic": "college_medicine",
+          "gold_idx": 3,
+          "gold_letter": "D",
+          "pred_idx": 3,
+          "pred_letter": "D",
+          "correct": true,
+          "raw_output": "D",
+          "error": ""
+        },
+        {
+          "sample_id": "test_890",
+          "topic": "medical_genetics",
+          "gold_idx": 0,
+          "gold_letter": "A",
+          "pred_idx": 1,
+          "pred_letter": "B",
+          "correct": false,
+          "raw_output": "B",
+          "error": ""
+        },
+        {
+          "sample_id": "test_708",
+          "topic": "college_medicine",
+          "gold_idx": 1,
+          "gold_letter": "B",
+          "pred_idx": 0,
+          "pred_letter": "A",
+          "correct": false,
+          "raw_output": "A",
+          "error": ""
+        },
+        {
+          "sample_id": "test_1266",
+          "topic": "high_school_biology",
+          "gold_idx": 0,
+          "gold_letter": "A",
+          "pred_idx": 2,
+          "pred_letter": "C",
+          "correct": false,
+          "raw_output": "C",
+          "error": ""
+        },
+        {
+          "sample_id": "test_617",
+          "topic": "college_medicine",
+          "gold_idx": 3,
+          "gold_letter": "D",
+          "pred_idx": 3,
+          "pred_letter": "D",
+          "correct": true,
+          "raw_output": "D",
+          "error": ""
+        }
+      ]
+    }
+  ],
+  "_json_path": "/Users/osx/Documents/med_l_llm/tests/smoke_work/m11_verify/smoke_results.json"
+}

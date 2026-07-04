@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  med-usb offline UI. Fully self-contained: no external CSS/JS/fonts/images.
+  Served by auditgw on 127.0.0.1 only; all API paths are relative.
+  GENERATED FILE (usb_stick/ui/index.html): edit src/ui/index.template.html
+  and src/ui/presets.json, then run src/ui/build_ui.sh.
+-->
+<title>医療文書コパイロット (Med Copilot USB)</title>
+<link rel="icon" href="data:,">
+
+<style>
+:root{
+  --bg:#f4f6f8; --panel:#ffffff; --ink:#1c2733; --muted:#5b6b7b;
+  --accent:#155e9e; --accent-ink:#ffffff; --line:#d7dee5;
+  --ok:#1e7d46; --warn:#a06008; --err:#b3261e;
+  --chat-user:#e8f0f9; --chat-ai:#f2f4f6; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55;
+}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--ink)}
+.hidden{display:none !important}
+
+/* ---- status banner ---- */
+#status-banner{
+  display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;
+  padding:.45rem .9rem;font-size:.86rem;color:#fff;background:#5b6b7b;
+}
+#status-banner.ok{background:var(--ok)}
+#status-banner.warn{background:var(--warn)}
+#status-banner.err{background:var(--err)}
+#status-banner .dot{width:.6rem;height:.6rem;border-radius:50%;background:#fff;flex:none}
+#status-banner .sep{opacity:.55}
+
+/* ---- header ---- */
+header{
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+  padding:.6rem 1rem;background:var(--panel);border-bottom:1px solid var(--line);
+}
+header h1{font-size:1.05rem;font-weight:700}
+header .spacer{flex:1}
+#operator-chip{font-size:.85rem;color:var(--muted)}
+#operator-chip b{color:var(--ink)}
+.btn{
+  border:1px solid var(--line);background:var(--panel);border-radius:6px;
+  padding:.3rem .8rem;font-size:.85rem;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:disabled{opacity:.5;cursor:not-allowed}
+
+/* ---- login ---- */
+#login-view{max-width:26rem;margin:8vh auto;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;padding:2rem}
+#login-view h2{margin-bottom:.4rem}
+#login-view p.note{font-size:.85rem;color:var(--muted);margin-bottom:1.2rem}
+#login-view label{display:block;font-size:.85rem;margin:.8rem 0 .25rem;color:var(--muted)}
+#login-view input,#login-view select{
+  width:100%;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:#fff}
+#login-view button{width:100%;margin-top:1.3rem;padding:.6rem}
+#login-error{color:var(--err);font-size:.85rem;margin-top:.6rem;min-height:1.2em}
+
+/* ---- app layout ---- */
+#app-view{display:flex;height:calc(100vh - 5.6rem);min-height:22rem}
+aside{
+  width:17.5rem;flex:none;background:var(--panel);border-right:1px solid var(--line);
+  padding:1rem;overflow-y:auto;
+}
+aside h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--muted);margin:1.1rem 0 .5rem}
+aside h3:first-child{margin-top:0}
+.preset-btn{
+  display:block;width:100%;text-align:left;margin-bottom:.4rem;
+  border:1px solid var(--line);border-radius:8px;background:#fff;padding:.55rem .7rem;
+}
+.preset-btn .pl{font-weight:600}
+.preset-btn .ps{display:block;font-size:.76rem;color:var(--muted)}
+.preset-btn.active{border-color:var(--accent);background:var(--chat-user)}
+#model-select{width:100%;padding:.4rem;border:1px solid var(--line);border-radius:6px;background:#fff}
+#model-note{font-size:.75rem;color:var(--muted);margin-top:.3rem;word-break:break-all}
+
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+#preset-form{padding:1rem;border-bottom:1px solid var(--line);background:var(--panel);
+  overflow-y:auto;max-height:44%}
+#preset-form h2{font-size:1rem;margin-bottom:.6rem}
+#preset-form .caveat{font-size:.8rem;color:var(--warn);margin-bottom:.6rem}
+.field{margin-bottom:.65rem}
+.field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:.2rem}
+.field input,.field textarea{
+  width:100%;padding:.45rem .55rem;border:1px solid var(--line);border-radius:6px;background:#fff}
+.field textarea{min-height:4.2rem;resize:vertical}
+#form-actions{display:flex;gap:.6rem;align-items:center;margin-top:.4rem}
+#tok-s{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+
+#chat-pane{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.7rem}
+.msg{max-width:52rem;border-radius:10px;padding:.65rem .85rem;white-space:pre-wrap;
+  word-break:break-word;border:1px solid var(--line)}
+.msg.user{align-self:flex-end;background:var(--chat-user)}
+.msg.assistant{align-self:flex-start;background:var(--chat-ai)}
+.msg .who{display:block;font-size:.72rem;color:var(--muted);margin-bottom:.25rem}
+.msg.streaming::after{content:"▍";animation:blink 1s step-start infinite}
+@keyframes blink{50%{opacity:0}}
+#followup-bar{display:flex;gap:.6rem;padding: .7rem 1rem;background:var(--panel);
+  border-top:1px solid var(--line)}
+#followup-input{flex:1;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px}
+footer{padding:.35rem 1rem;font-size:.75rem;color:var(--muted);background:var(--bg)}
+@media (max-width:760px){
+  #app-view{flex-direction:column;height:auto}
+  aside{width:100%;border-right:none;border-bottom:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+
+<div id="status-banner">
+  <span class="dot"></span>
+  <span id="st-audit" data-i18n="st_checking">監査ゲートウェイ確認中…</span>
+  <span class="sep">|</span>
+  <span id="st-offline"></span>
+  <span class="sep">|</span>
+  <span id="st-model"></span>
+</div>
+
+<header>
+  <h1 data-i18n="app_title">医療文書コパイロット（完全オフライン）</h1>
+  <span class="spacer"></span>
+  <span id="operator-chip" class="hidden"></span>
+  <button id="lang-toggle" class="btn" type="button">EN</button>
+  <button id="logout-btn" class="btn hidden" type="button" data-i18n="logout">ログアウト</button>
+</header>
+
+<!-- ============ operator login view ============ -->
+<div id="login-view">
+  <h2 data-i18n="login_title">操作者ログイン</h2>
+  <p class="note" data-i18n="login_note">氏名・職員ID・職種を入力してください。全ての操作は職員IDと共に監査ログへ記録されます。</p>
+  <form id="login-form">
+    <label for="op-name" data-i18n="f_name">氏名</label>
+    <input id="op-name" autocomplete="off" required>
+    <label for="op-id" data-i18n="f_staffid">職員ID</label>
+    <input id="op-id" autocomplete="off" required>
+    <label for="op-role" data-i18n="f_role">職種</label>
+    <select id="op-role">
+      <option value="doctor" data-i18n="r_doctor">医師</option>
+      <option value="nurse" data-i18n="r_nurse">看護師</option>
+      <option value="pharmacist" data-i18n="r_pharmacist">薬剤師</option>
+      <option value="clerk" data-i18n="r_clerk">医事・事務</option>
+      <option value="other" data-i18n="r_other">その他</option>
+    </select>
+    <button class="btn primary" type="submit" data-i18n="login_btn">ログインして開始</button>
+    <div id="login-error"></div>
+  </form>
+</div>
+
+<!-- ============ main app view ============ -->
+<div id="app-view" class="hidden">
+  <aside>
+    <h3 data-i18n="s_presets">文書プリセット</h3>
+    <div id="preset-list"></div>
+    <h3 data-i18n="s_model">モデル</h3>
+    <select id="model-select"></select>
+    <div id="model-note"></div>
+    <h3 data-i18n="s_outlang">出力言語 / Draft language</h3>
+    <select id="outlang-select">
+      <option value="ja" data-i18n="ol_ja">日本語</option>
+      <option value="en" data-i18n="ol_en">English</option>
+    </select>
+  </aside>
+
+  <main>
+    <div id="llm-loading" class="caveat hidden" data-i18n="st_llm_loading">モデル読み込み中…</div>
+    <section id="preset-form">
+      <h2 id="pf-title" data-i18n="pf_pick">左のプリセットを選択してください</h2>
+      <div id="pf-caveat" class="caveat hidden"></div>
+      <div id="pf-fields"></div>
+      <div id="form-actions" class="hidden">
+        <button id="generate-btn" class="btn primary" type="button" data-i18n="generate">下書きを生成</button>
+        <button id="stop-btn" class="btn hidden" type="button" data-i18n="stop">停止</button>
+        <button id="clear-btn" class="btn" type="button" data-i18n="clear">会話をクリア</button>
+        <span id="tok-s">-- tok/s</span>
+      </div>
+    </section>
+    <section id="chat-pane"></section>
+    <div id="followup-bar" class="hidden">
+      <input id="followup-input" data-i18n-ph="followup_ph" placeholder="追加の指示（例: もっと簡潔に）">
+      <button id="followup-btn" class="btn" type="button" data-i18n="send">送信</button>
+    </div>
+  </main>
+</div>
+
+<footer data-i18n="footer_note">生成された文書は下書きです。内容は必ず担当者が確認・修正してください。ネットワークは 127.0.0.1（このPC内）のみ使用します。</footer>
+
+<script>
+"use strict";
+/* ================= inlined data (from src/ui/presets.json via build_ui.sh) ================= */
+const PRESET_DATA = {
+  "schema": "med-usb-presets/v1",
+  "generated_note": "Source of truth for UI presets. build_ui.sh inlines this file into usb_stick/ui/index.html. Do not edit the inlined copy.",
+  "presets": [
+    {
+      "id": "taiin-summary",
+      "label_ja": "退院サマリー",
+      "label_en": "Discharge Summary",
+      "template_mode": "chat",
+      "stop": [
+        "\n\nUser:"
+      ],
+      "system_prompt": "あなたは日本の病院で退院サマリー（退院時要約）の下書きを作成する医療文書作成支援AIです。以下のルールを厳守してください。\n1. 入力された診療情報のみに基づいて作成し、入力にない事実を推測・創作しない。\n2. 入力から判断できない項目には「【要確認】」と記載する。\n3. 患者氏名・患者ID・住所・電話番号は本文に記載しない（年齢・性別のみ可）。\n4. 出力はあくまで下書きであり、担当医が必ず確認・修正することを前提とする。\n\n■ 出力形式（必ずこの骨組みに従うこと）:\n【患者】年齢・性別\n【入院期間】YYYY年MM月DD日 〜 YYYY年MM月DD日\n【主病名】\n【併存疾患】\n【入院時主訴・現症】\n【入院までの経過】\n【入院後経過】\n【実施した手術・処置】\n【退院時処方】\n【退院時の状態】\n【退院後の方針・外来予定】\n\n■ 例（骨組みの使い方）:\n入力: 78歳男性。誤嚥性肺炎で4月1日入院。ABPC/SBT点滴で改善し4月10日退院。退院処方なし。嚥下リハ実施。外来2週間後。\n出力:\n【患者】78歳 男性\n【入院期間】YYYY年4月1日 〜 YYYY年4月10日\n【主病名】誤嚥性肺炎\n【併存疾患】【要確認】\n【入院時主訴・現症】発熱・呼吸器症状にて入院【要確認】\n【入院までの経過】【要確認】\n【入院後経過】入院後ABPC/SBT点滴静注を開始し、炎症所見・呼吸状態は改善した。入院中に嚥下リハビリテーションを実施した。\n【実施した手術・処置】嚥下リハビリテーション\n【退院時処方】なし\n【退院時の状態】症状軽快し退院【要確認】\n【退院後の方針・外来予定】2週間後に外来受診予定\n\n上記の形式で、与えられた診療メモから退院サマリーの下書きを日本語で作成してください。",
+      "input_fields": [
+        {
+          "id": "patient_basic",
+          "label_ja": "患者基本情報（年齢・性別・主病名）",
+          "label_en": "Patient basics (age / sex / main diagnosis)",
+          "type": "text",
+          "placeholder_ja": "例: 78歳 男性 誤嚥性肺炎"
+        },
+        {
+          "id": "admission_period",
+          "label_ja": "入院期間",
+          "label_en": "Admission period",
+          "type": "text",
+          "placeholder_ja": "例: 2026年4月1日〜4月10日"
+        },
+        {
+          "id": "clinical_course",
+          "label_ja": "入院経過メモ（検査・治療・処置など）",
+          "label_en": "Clinical course notes (tests, treatment, procedures)",
+          "type": "textarea",
+          "placeholder_ja": "経過の箇条書きメモを貼り付け"
+        },
+        {
+          "id": "discharge_plan",
+          "label_ja": "退院時処方・退院後方針",
+          "label_en": "Discharge meds and follow-up plan",
+          "type": "textarea",
+          "placeholder_ja": "退院処方、外来予定、指導内容など"
+        }
+      ]
+    },
+    {
+      "id": "operative-note",
+      "label_ja": "手術記録",
+      "label_en": "Operative Note",
+      "template_mode": "chat",
+      "stop": [
+        "\n\nUser:"
+      ],
+      "system_prompt": "あなたは日本の病院で手術記録（オペレコ）の下書きを作成する医療文書作成支援AIです。以下のルールを厳守してください。\n1. 入力された術中メモのみに基づいて作成し、記載のない手技・所見を創作しない。\n2. 不明な項目は「【要確認】」と記載する。\n3. 患者氏名・患者IDは記載しない。術者・助手は職名または入力どおりの表記のみ。\n4. 出力は下書きであり、術者が必ず確認・修正する。\n\n■ 出力形式（必ずこの骨組みに従うこと）:\n【術前診断】\n【術後診断】\n【術式】\n【麻酔】\n【手術日・手術時間】\n【術者・助手】\n【出血量】\n【術中所見】\n【手技の経過】(1) 体位・消毒 (2) 到達・展開 (3) 主要手技 (4) 止血・洗浄 (5) 閉創\n【摘出標本・提出検体】\n【術中合併症】\n【術後指示】\n\n■ 例（骨組みの使い方）:\n入力: 急性虫垂炎、腹腔鏡下虫垂切除。全麻。手術時間55分、出血少量。虫垂は腫大・発赤、穿孔なし。ドレーンなし。\n出力:\n【術前診断】急性虫垂炎\n【術後診断】急性虫垂炎\n【術式】腹腔鏡下虫垂切除術\n【麻酔】全身麻酔\n【手術日・手術時間】【要確認】・55分\n【術者・助手】【要確認】\n【出血量】少量\n【術中所見】虫垂は腫大・発赤を認めたが、穿孔は認めなかった。\n【手技の経過】(1) 仰臥位、常法により消毒・覆布 (2) 気腹しポート挿入 (3) 虫垂間膜を処理し虫垂根部を切離 (4) 止血を確認し洗浄 (5) ドレーン留置なく閉創【要確認】\n【摘出標本・提出検体】虫垂（病理提出【要確認】）\n【術中合併症】なし\n【術後指示】【要確認】\n\n上記の形式で、与えられた術中メモから手術記録の下書きを日本語で作成してください。",
+      "input_fields": [
+        {
+          "id": "diagnosis_procedure",
+          "label_ja": "診断名・術式",
+          "label_en": "Diagnosis and procedure",
+          "type": "text",
+          "placeholder_ja": "例: 急性虫垂炎 / 腹腔鏡下虫垂切除術"
+        },
+        {
+          "id": "anesthesia_team",
+          "label_ja": "麻酔・術者情報",
+          "label_en": "Anesthesia and surgical team",
+          "type": "text",
+          "placeholder_ja": "例: 全身麻酔、術者○○医師（職名のみ）"
+        },
+        {
+          "id": "op_findings",
+          "label_ja": "術中メモ（所見・手技・出血量・時間）",
+          "label_en": "Intraoperative notes (findings, steps, blood loss, time)",
+          "type": "textarea",
+          "placeholder_ja": "術中の箇条書きメモを貼り付け"
+        }
+      ]
+    },
+    {
+      "id": "nursing-record",
+      "label_ja": "看護記録（SOAP）",
+      "label_en": "Nursing Record (SOAP)",
+      "template_mode": "chat",
+      "stop": [
+        "\n\nUser:"
+      ],
+      "system_prompt": "あなたは日本の病院で看護記録（SOAP形式）の下書きを作成する看護記録支援AIです。以下のルールを厳守してください。\n1. 入力された観察メモのみに基づいて記載し、観察していない事実を創作しない。\n2. S（主観的情報）は患者の発言を「」で記載する。入力に発言がなければ「特記なし」とする。\n3. 数値（バイタルサイン等）は入力どおりに転記し、単位を付ける。不明は「【要確認】」。\n4. 患者氏名・患者IDは記載しない。\n5. 出力は下書きであり、記載者（看護師）が必ず確認・修正する。\n\n■ 出力形式（必ずこの骨組みに従うこと）:\nS: （患者の訴え・発言）\nO: （バイタルサイン、観察所見、実施したケア）\nA: （アセスメント: 状態の評価、リスクの評価）\nP: （計画: 継続する観察・ケア、報告事項）\n\n■ 例（骨組みの使い方）:\n入力: 「傷のあたりがズキズキする」と訴えあり。BT37.2 BP128/76 HR82 SpO2 97%RA。創部発赤なし。鎮痛薬希望あり指示内服介助。\n出力:\nS: 「傷のあたりがズキズキする」と疼痛の訴えあり。\nO: BT 37.2℃、BP 128/76 mmHg、HR 82回/分、SpO2 97%（室内気）。創部に発赤・腫脹なし。指示の鎮痛薬内服を介助した。\nA: 術後疼痛は自制内だが鎮痛薬を要する状態。創部感染徴候は現時点でみられない。\nP: 疼痛の程度と鎮痛薬の効果を継続観察。創部の観察を継続し、発赤・浸出液出現時は医師へ報告する。\n\n上記の形式で、与えられた観察メモからSOAP形式の看護記録の下書きを日本語で作成してください。",
+      "input_fields": [
+        {
+          "id": "patient_context",
+          "label_ja": "患者状況（術後日数・疾患など）",
+          "label_en": "Patient context (post-op day, condition)",
+          "type": "text",
+          "placeholder_ja": "例: 術後1日目、腹腔鏡下虫垂切除後"
+        },
+        {
+          "id": "observations",
+          "label_ja": "観察メモ（発言・バイタル・所見・実施ケア）",
+          "label_en": "Observation notes (statements, vitals, findings, care given)",
+          "type": "textarea",
+          "placeholder_ja": "勤務帯の観察メモを貼り付け"
+        }
+      ]
+    },
+    {
+      "id": "referral-letter",
+      "label_ja": "診療情報提供書",
+      "label_en": "Referral Letter",
+      "template_mode": "chat",
+      "stop": [
+        "\n\nUser:"
+      ],
+      "system_prompt": "あなたは日本の医療機関で診療情報提供書（紹介状）の下書きを作成する医療文書作成支援AIです。以下のルールを厳守してください。\n1. 入力された情報のみに基づいて作成し、入力にない検査値・経過を創作しない。\n2. 不明な項目は「【要確認】」と記載する。\n3. 患者氏名・生年月日・住所などの個人識別情報は「【患者氏名】」「【生年月日】」のようなプレースホルダのままにする。\n4. 日本の紹介状の慣例に沿った丁寧な文体（「平素より大変お世話になっております。」等）を用いる。\n5. 出力は下書きであり、作成医が必ず確認・修正する。\n\n■ 出力形式（必ずこの骨組みに従うこと）:\n【宛先】○○病院 ○○科 御机下\n【患者】【患者氏名】（【生年月日】・年齢・性別）\n【傷病名】\n【紹介目的】\n【既往歴・アレルギー】\n【現病歴・経過】（拝啓の挨拶文から始める）\n【現在の処方】\n【検査所見】\n【備考・添付資料】\n結びの挨拶（「ご高診のほど、何卒よろしくお願い申し上げます。」等）\n\n■ 例（骨組みの使い方）:\n入力: 65歳女性。検診で貧血指摘 Hb8.9。上部内視鏡異常なし。下部精査目的で消化器内科へ紹介。処方: 鉄剤内服中。\n出力:\n【宛先】○○病院 消化器内科 御机下\n【患者】【患者氏名】（【生年月日】・65歳・女性）\n【傷病名】鉄欠乏性貧血の疑い\n【紹介目的】下部消化管精査のご依頼\n【既往歴・アレルギー】【要確認】\n【現病歴・経過】平素より大変お世話になっております。患者様は検診にて貧血（Hb 8.9 g/dL）を指摘され、当院を受診されました。上部消化管内視鏡検査では明らかな出血源を認めませんでした。下部消化管の精査が必要と考え、貴科にご紹介申し上げます。\n【現在の処方】鉄剤内服中（薬剤名【要確認】）\n【検査所見】Hb 8.9 g/dL、上部消化管内視鏡: 異常所見なし\n【備考・添付資料】【要確認】\nご多忙のところ恐縮ですが、ご高診のほど何卒よろしくお願い申し上げます。\n\n上記の形式で、与えられた情報から診療情報提供書の下書きを日本語で作成してください。",
+      "input_fields": [
+        {
+          "id": "referral_to",
+          "label_ja": "紹介先（病院名・診療科）",
+          "label_en": "Referral destination (hospital, department)",
+          "type": "text",
+          "placeholder_ja": "例: ○○病院 消化器内科"
+        },
+        {
+          "id": "purpose",
+          "label_ja": "紹介目的",
+          "label_en": "Purpose of referral",
+          "type": "text",
+          "placeholder_ja": "例: 下部消化管精査のご依頼"
+        },
+        {
+          "id": "clinical_info",
+          "label_ja": "経過・検査所見・処方のメモ",
+          "label_en": "Course, test results, current meds",
+          "type": "textarea",
+          "placeholder_ja": "現病歴、検査値、処方内容など"
+        }
+      ]
+    },
+    {
+      "id": "deid-assist",
+      "label_ja": "匿名化支援（マスキング）",
+      "label_en": "De-identification Assist",
+      "template_mode": "raw",
+      "stop": [
+        "User:",
+        "\n\nUser:"
+      ],
+      "system_prompt": "あなたは医療文書の匿名化（個人情報マスキング）を支援するAIです。入力文書の内容・意味は一切変更せず、以下の個人識別情報のみを対応するタグに置換してください。\n1. 患者・家族の氏名 → 【氏名】\n2. 患者ID・カルテ番号・保険証番号 → 【ID】\n3. 生年月日 → 【生年月日】\n4. 住所・郵便番号 → 【住所】\n5. 電話番号・FAX・メールアドレス → 【連絡先】\n6. 医療機関名・施設名 → 【施設名】\n7. 医療者の氏名 → 【医療者名】\n診断名・薬剤名・検査値・日付の年月日以外の臨床情報は絶対に変更・削除しない。判断に迷う箇所は置換した上で「（要判断）」を付記する。\n\n■ 出力形式（必ずこの骨組みに従うこと）:\n--- 匿名化済みテキスト ---\n（置換後の全文）\n--- 置換一覧 ---\n（置換した項目の種類と件数の箇条書き）\n--- 注意 ---\n※本匿名化は自動処理による支援であり、個人情報の検出漏れが残る可能性があります。検出率（recall）は法的水準を保証するものではなく、法的・規制上の匿名化要件を満たす保証はありません。必ず人間の担当者が全文を目視で確認・検証してください。(Automated de-identification: recall is NOT legal-grade. A human reviewer must verify the entire text before any use or disclosure.)\n\n■ 例（骨組みの使い方）:\n入力: 山田太郎様（ID:1234567）は5月2日に○○総合病院を受診。担当は佐藤医師。\n出力:\n--- 匿名化済みテキスト ---\n【氏名】様（ID:【ID】）は5月2日に【施設名】を受診。担当は【医療者名】。\n--- 置換一覧 ---\n・氏名: 1件 ・ID: 1件 ・施設名: 1件 ・医療者名: 1件\n--- 注意 ---\n※本匿名化は自動処理による支援であり、個人情報の検出漏れが残る可能性があります。検出率（recall）は法的水準を保証するものではなく、法的・規制上の匿名化要件を満たす保証はありません。必ず人間の担当者が全文を目視で確認・検証してください。(Automated de-identification: recall is NOT legal-grade. A human reviewer must verify the entire text before any use or disclosure.)\n\nこの「--- 注意 ---」ブロックは毎回、省略せずに必ず出力の末尾に含めてください。",
+      "input_fields": [
+        {
+          "id": "source_text",
+          "label_ja": "匿名化する文書（全文貼り付け）",
+          "label_en": "Document to de-identify (paste full text)",
+          "type": "textarea",
+          "placeholder_ja": "匿名化したい医療文書を貼り付けてください"
+        }
+      ]
+    }
+  ]
+};
+
+/* Pinned model files shipped on the stick (fallback list if /v1/models is unreachable). */
+const DEFAULT_MODELS = [
+  "rwkv7-2.9B-world-q4_k_m.gguf",
+  "granite-4.0-h-micro-Q4_K_M.gguf"
+];
+
+/* All endpoints are relative: served/proxied by auditgw on 127.0.0.1. */
+const EP_STATUS = "/api/status";
+const EP_MODELS = "/v1/models";
+const EP_CHAT   = "/v1/chat/completions";
+const EP_RAW    = "/completion";
+
+/* ================= i18n ================= */
+const I18N = {
+  ja: {
+    app_title:"医療文書コパイロット（完全オフライン）",
+    login_title:"操作者ログイン",
+    login_note:"氏名・職員ID・職種を入力してください。全ての操作は職員IDと共に監査ログへ記録されます。",
+    f_name:"氏名", f_staffid:"職員ID", f_role:"職種",
+    r_doctor:"医師", r_nurse:"看護師", r_pharmacist:"薬剤師", r_clerk:"医事・事務", r_other:"その他",
+    login_btn:"ログインして開始", login_err:"氏名と職員IDを入力してください。",
+    logout:"ログアウト",
+    s_presets:"文書プリセット", s_model:"モデル",
+    s_outlang:"出力言語", ol_ja:"日本語", ol_en:"英語 (English)",
+    pf_pick:"左のプリセットを選択してください",
+    generate:"下書きを生成", stop:"停止", clear:"会話をクリア", send:"送信",
+    followup_ph:"追加の指示（例: もっと簡潔に）",
+    st_checking:"監査ゲートウェイ確認中…",
+    st_audit_ok:"監査ログ: 正常（改ざん検知チェーン有効）",
+    st_audit_bad:"監査ログ: 異常 — 管理者に連絡してください",
+    st_unreach:"監査ゲートウェイに接続できません",
+    st_offline_ok:"オフラインモード: 有効（外部送信なし）",
+    st_offline_no:"警告: オフライン厳格モードが無効です",
+    st_llm_loading:"モデル読み込み中… USBからの初回起動は数分かかることがあります。完了までお待ちください。",
+    llm_not_ready:"モデルの読み込みが完了していません。しばらくお待ちください。",
+    you:"あなた", ai:"AI下書き",
+    deid_caveat:"注意: 匿名化の検出漏れ（recall）は法的水準を保証しません。出力は必ず人間が全文確認してください。",
+    err_gen:"生成エラー: ",
+    footer_note:"生成された文書は下書きです。内容は必ず担当者が確認・修正してください。ネットワークは 127.0.0.1（このPC内）のみ使用します。"
+  },
+  en: {
+    app_title:"Medical Documentation Copilot (fully offline)",
+    login_title:"Operator Login",
+    login_note:"Enter your name, staff ID and role. Every action is recorded in the audit log with your staff ID.",
+    f_name:"Name", f_staffid:"Staff ID", f_role:"Role",
+    r_doctor:"Physician", r_nurse:"Nurse", r_pharmacist:"Pharmacist", r_clerk:"Clerk / Admin", r_other:"Other",
+    login_btn:"Log in and start", login_err:"Please enter your name and staff ID.",
+    logout:"Log out",
+    s_presets:"Document presets", s_model:"Model",
+    s_outlang:"Draft language", ol_ja:"Japanese (日本語)", ol_en:"English",
+    pf_pick:"Select a preset on the left",
+    generate:"Generate draft", stop:"Stop", clear:"Clear conversation", send:"Send",
+    followup_ph:"Follow-up instruction (e.g. make it shorter)",
+    st_checking:"Checking audit gateway…",
+    st_audit_ok:"Audit log: OK (tamper-evident chain active)",
+    st_audit_bad:"Audit log: FAILURE — contact the administrator",
+    st_unreach:"Audit gateway unreachable",
+    st_offline_ok:"Offline mode: strict (no external traffic)",
+    st_offline_no:"WARNING: strict offline mode is OFF",
+    st_llm_loading:"Loading model… first launch from USB can take a few minutes. Please wait until it finishes.",
+    llm_not_ready:"The model is still loading. Please wait a moment and try again.",
+    you:"You", ai:"AI draft",
+    deid_caveat:"Caution: de-identification recall is NOT legal-grade. A human must verify the entire output.",
+    err_gen:"Generation error: ",
+    footer_note:"Generated documents are drafts only and must be reviewed by staff. Network use is limited to 127.0.0.1 (this PC).",
+  }
+};
+
+/* ================= state ================= */
+const S = {
+  lang: "ja",
+  outLang: "ja",           // draft OUTPUT language (independent of UI lang)
+  operator: null,          // {name, staffId, role}
+  presetId: null,
+  turns: [],               // [{role:"user"|"assistant", content}]
+  generating: false,
+  aborter: null,
+  lastTokS: null,
+  llmReady: false          // true once auditgw reports llm_reachable
+};
+
+const $ = (id) => document.getElementById(id);
+const t = (k) => (I18N[S.lang] && I18N[S.lang][k]) || I18N.ja[k] || k;
+const presets = () => (PRESET_DATA && PRESET_DATA.presets) || [];
+const curPreset = () => presets().find(p => p.id === S.presetId) || null;
+
+/* ================= operator identity ================= */
+function loadOperator(){
+  try { S.operator = JSON.parse(sessionStorage.getItem("medusb_operator") || "null"); }
+  catch(e){ S.operator = null; }
+}
+function saveOperator(op){
+  S.operator = op;
+  sessionStorage.setItem("medusb_operator", JSON.stringify(op));
+}
+function clearOperator(){
+  S.operator = null;
+  sessionStorage.removeItem("medusb_operator");
+}
+/* X-Operator-Id goes on EVERY request; value is ASCII-safe (URI-encoded parts). */
+function operatorHeaders(){
+  const h = { "X-Requested-With": "medusb-ui" };
+  if (S.operator){
+    h["X-Operator-Id"]   = encodeURIComponent(S.operator.staffId);
+    h["X-Operator-Name"] = encodeURIComponent(S.operator.name);
+    h["X-Operator-Role"] = encodeURIComponent(S.operator.role);
+  }
+  return h;
+}
+function apiFetch(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({}, operatorHeaders(), opts.headers || {});
+  return fetch(path, opts);
+}
+
+/* ================= language ================= */
+function applyLang(){
+  document.documentElement.lang = S.lang;
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  $("lang-toggle").textContent = S.lang === "ja" ? "EN" : "日本語";
+  renderPresetList();
+  renderPresetForm(false);
+  renderOperatorChip();
+}
+function toggleLang(){
+  S.lang = S.lang === "ja" ? "en" : "ja";
+  try { sessionStorage.setItem("medusb_lang", S.lang); } catch(e){}
+  applyLang();
+}
+
+/* Draft OUTPUT language: append an explicit directive to the preset's system
+   prompt. The presets are authored in Japanese; when EN is chosen we instruct
+   the (multilingual) model to write the whole draft in English while keeping
+   every safety rule from the preset. */
+function sysPromptFor(p){
+  const base = p.system_prompt || "";
+  if (S.outLang === "en"){
+    return base +
+      "\n\n【OUTPUT LANGUAGE】Follow every rule above, but write the ENTIRE draft in English. " +
+      "Keep clinical section headings in English. Do not translate patient-safety placeholders such as 【要確認】; render them as [VERIFY].";
+  }
+  return base +
+    "\n\n【出力言語】上記のルールに従い、本文はすべて日本語で作成してください。";
+}
+function setOutLang(v){
+  S.outLang = (v === "en") ? "en" : "ja";
+  try { sessionStorage.setItem("medusb_outlang", S.outLang); } catch(e){}
+  const sel = $("outlang-select"); if (sel) sel.value = S.outLang;
+}
+
+/* ================= views ================= */
+function showView(){
+  const loggedIn = !!S.operator;
+  $("login-view").classList.toggle("hidden", loggedIn);
+  $("app-view").classList.toggle("hidden", !loggedIn);
+  $("logout-btn").classList.toggle("hidden", !loggedIn);
+  $("operator-chip").classList.toggle("hidden", !loggedIn);
+  renderOperatorChip();
+}
+function renderOperatorChip(){
+  if (!S.operator) return;
+  const roleKey = "r_" + S.operator.role;
+  $("operator-chip").innerHTML = "";
+  const b = document.createElement("b");
+  b.textContent = S.operator.name;
+  $("operator-chip").appendChild(b);
+  $("operator-chip").appendChild(document.createTextNode(
+    " (" + S.operator.staffId + " / " + t(roleKey) + ")"));
+}
+
+/* ================= preset picker (JA-first, EN toggle) ================= */
+function renderPresetList(){
+  const box = $("preset-list");
+  box.innerHTML = "";
+  presets().forEach(p => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "preset-btn" + (p.id === S.presetId ? " active" : "");
+    const main = document.createElement("span");
+    main.className = "pl";
+    main.textContent = S.lang === "ja" ? p.label_ja : p.label_en;
+    const sub = document.createElement("span");
+    sub.className = "ps";
+    sub.textContent = S.lang === "ja" ? p.label_en : p.label_ja;
+    btn.appendChild(main); btn.appendChild(sub);
+    btn.addEventListener("click", () => selectPreset(p.id));
+    box.appendChild(btn);
+  });
+}
+function selectPreset(id){
+  if (S.generating) stopGeneration();
+  S.presetId = id;
+  S.turns = [];
+  $("chat-pane").innerHTML = "";
+  renderPresetList();
+  renderPresetForm(true);
+}
+function renderPresetForm(resetValues){
+  const p = curPreset();
+  const fieldsBox = $("pf-fields");
+  if (!p){
+    $("pf-title").textContent = t("pf_pick");
+    fieldsBox.innerHTML = "";
+    $("form-actions").classList.add("hidden");
+    $("followup-bar").classList.add("hidden");
+    $("pf-caveat").classList.add("hidden");
+    return;
+  }
+  const old = {};
+  if (!resetValues){
+    fieldsBox.querySelectorAll("input,textarea").forEach(el => old[el.dataset.fid] = el.value);
+  }
+  $("pf-title").textContent = S.lang === "ja"
+    ? p.label_ja + " / " + p.label_en
+    : p.label_en + " / " + p.label_ja;
+  const cav = $("pf-caveat");
+  if (p.id === "deid-assist"){
+    cav.textContent = t("deid_caveat");
+    cav.classList.remove("hidden");
+  } else {
+    cav.classList.add("hidden");
+  }
+  fieldsBox.innerHTML = "";
+  (p.input_fields || []).forEach(f => {
+    const wrap = document.createElement("div");
+    wrap.className = "field";
+    const lab = document.createElement("label");
+    lab.textContent = S.lang === "ja" ? f.label_ja : f.label_en;
+    const el = document.createElement(f.type === "textarea" ? "textarea" : "input");
+    el.dataset.fid = f.id;
+    if (f.placeholder_ja && S.lang === "ja") el.placeholder = f.placeholder_ja;
+    if (old[f.id] !== undefined) el.value = old[f.id];
+    wrap.appendChild(lab); wrap.appendChild(el);
+    fieldsBox.appendChild(wrap);
+  });
+  $("form-actions").classList.remove("hidden");
+  $("followup-bar").classList.remove("hidden");
+}
+
+/* ================= chat rendering ================= */
+function addMsg(role, text){
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+  const who = document.createElement("span");
+  who.className = "who";
+  who.textContent = role === "user" ? t("you") : t("ai");
+  const body = document.createElement("span");
+  body.className = "body";
+  body.textContent = text;
+  div.appendChild(who); div.appendChild(body);
+  $("chat-pane").appendChild(div);
+  $("chat-pane").scrollTop = $("chat-pane").scrollHeight;
+  return { div, body };
+}
+
+/* ================= generation ================= */
+function collectFieldsText(){
+  const p = curPreset();
+  const parts = [];
+  (p.input_fields || []).forEach(f => {
+    const el = document.querySelector('#pf-fields [data-fid="' + f.id + '"]');
+    const v = el ? el.value.trim() : "";
+    if (v) parts.push("■ " + f.label_ja + ":\n" + v);
+  });
+  return parts.join("\n\n");
+}
+function buildRawPrompt(p){
+  /* RWKV-World style raw template: system text then User:/Assistant: turns. */
+  let s = sysPromptFor(p) + "\n\n";
+  S.turns.forEach(turn => {
+    s += (turn.role === "user" ? "User: " : "Assistant: ") + turn.content.trim() + "\n\n";
+  });
+  return s + "Assistant:";
+}
+function setTokS(v){
+  S.lastTokS = v;
+  $("tok-s").textContent = (v == null ? "--" : v.toFixed(1)) + " tok/s";
+}
+function stopGeneration(){
+  if (S.aborter) S.aborter.abort();
+}
+async function generate(userContent){
+  const p = curPreset();
+  if (!p || S.generating || !userContent.trim()) return;
+  if (!S.llmReady){ addMsg("assistant", t("llm_not_ready")); return; }
+  S.generating = true;
+  $("generate-btn").disabled = true;
+  $("stop-btn").classList.remove("hidden");
+  setTokS(null);
+
+  S.turns.push({ role: "user", content: userContent });
+  addMsg("user", userContent);
+  const out = addMsg("assistant", "");
+  out.div.classList.add("streaming");
+
+  const model = $("model-select").value || DEFAULT_MODELS[0];
+  const useChat = p.template_mode !== "raw";
+  const stops = (p.stop && p.stop.length) ? p.stop : undefined;
+
+  let url, payload;
+  if (useChat){
+    url = EP_CHAT;
+    payload = {
+      model: model,
+      stream: true,
+      timings_per_token: true,
+      temperature: 0.3,
+      max_tokens: 2048,
+      messages: [{ role: "system", content: sysPromptFor(p) }]
+        .concat(S.turns.map(x => ({ role: x.role, content: x.content })))
+    };
+    if (stops) payload.stop = stops;
+  } else {
+    url = EP_RAW;
+    payload = {
+      prompt: buildRawPrompt(p),
+      stream: true,
+      cache_prompt: true,
+      temperature: 0.3,
+      n_predict: 2048,
+      stop: stops || ["User:"]
+    };
+  }
+
+  S.aborter = new AbortController();
+  const t0 = performance.now();
+  let acc = "", chunkTokens = 0, serverTokS = null;
+
+  try {
+    const res = await apiFetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: S.aborter.signal
+    });
+    if (!res.ok || !res.body){
+      /* fallback for RWKV chat-template issues: retry once on raw /completion */
+      if (useChat && (res.status === 400 || res.status === 500)){
+        S.turns.pop();
+        out.div.remove();
+        S.generating = false; $("generate-btn").disabled = false; $("stop-btn").classList.add("hidden");
+        p.template_mode = "raw";
+        return generate(userContent);
+      }
+      throw new Error("HTTP " + res.status);
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    for(;;){
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop();
+      for (const line of lines){
+        const s = line.trim();
+        if (!s.startsWith("data:")) continue;
+        const data = s.slice(5).trim();
+        if (data === "[DONE]") continue;
+        let j;
+        try { j = JSON.parse(data); } catch(e){ continue; }
+        let piece = "";
+        if (useChat){
+          const ch = j.choices && j.choices[0];
+          if (ch && ch.delta && typeof ch.delta.content === "string") piece = ch.delta.content;
+        } else if (typeof j.content === "string"){
+          piece = j.content;
+        }
+        if (piece){
+          acc += piece; chunkTokens += 1;
+          out.body.textContent = acc;
+          $("chat-pane").scrollTop = $("chat-pane").scrollHeight;
+        }
+        /* llama-server timings: predicted_per_second is the authoritative tok/s */
+        const tm = j.timings || (j.choices && j.choices[0] && j.choices[0].timings);
+        if (tm && typeof tm.predicted_per_second === "number"){
+          serverTokS = tm.predicted_per_second;
+          setTokS(serverTokS);
+        }
+      }
+    }
+    if (serverTokS == null && chunkTokens > 0){
+      const secs = (performance.now() - t0) / 1000;
+      if (secs > 0) setTokS(chunkTokens / secs); /* client-side estimate */
+    }
+    S.turns.push({ role: "assistant", content: acc });
+  } catch(err){
+    if (err && err.name === "AbortError"){
+      S.turns.push({ role: "assistant", content: acc });
+    } else {
+      out.body.textContent = acc + "\n[" + t("err_gen") + (err && err.message ? err.message : String(err)) + "]";
+      S.turns.pop(); /* drop failed user turn so retry is clean */
+    }
+  } finally {
+    out.div.classList.remove("streaming");
+    S.generating = false;
+    S.aborter = null;
+    $("generate-btn").disabled = false;
+    $("stop-btn").classList.add("hidden");
+  }
+}
+
+/* ================= models ================= */
+async function loadModels(){
+  /* Populate the model list WITHOUT proxying to llama-server: the stick ships a
+     known set (DEFAULT_MODELS) and auditgw's /api/status reports which one is
+     loaded. This avoids a /v1/models 502 while the model is still loading. */
+  const sel = $("model-select");
+  let names = DEFAULT_MODELS.slice();
+  let running = null;
+  try {
+    const res = await apiFetch(EP_STATUS, { cache: "no-store" });
+    if (res.ok){
+      const j = await res.json();
+      if (j && j.model_file){
+        running = String(j.model_file).replace(/^.*[\\/]/, "");
+        if (!names.includes(running)) names.unshift(running);
+      }
+    }
+  } catch(e){ /* gateway not up yet — pinned defaults are fine */ }
+  const prev = sel.value;
+  sel.innerHTML = "";
+  names.forEach(n => {
+    const o = document.createElement("option");
+    o.value = n;
+    o.textContent = n.replace(/^.*[\\/]/, "");
+    sel.appendChild(o);
+  });
+  if (running && names.includes(running)) sel.value = running;
+  else if (prev && names.includes(prev)) sel.value = prev;
+  $("model-note").textContent = sel.value;
+}
+
+/* ================= status banner (fed by /api/status on auditgw) ================= */
+async function pollStatus(){
+  const banner = $("status-banner");
+  try {
+    const res = await apiFetch(EP_STATUS, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const j = await res.json();
+    const auditOk = !!(j.audit_ok || (j.audit && (j.audit.chain_ok || j.audit.ok)));
+    const offline = (j.offline_strict !== undefined) ? !!j.offline_strict : !!j.offline;
+    const entries = (j.audit && j.audit.entries != null) ? j.audit.entries : j.audit_entries;
+    $("st-audit").textContent = (auditOk ? t("st_audit_ok") : t("st_audit_bad"))
+      + (entries != null ? " [" + entries + "]" : "");
+    $("st-offline").textContent = offline ? t("st_offline_ok") : t("st_offline_no");
+    $("st-model").textContent = j.model_file ? String(j.model_file).replace(/^.*[\\/]/, "") : ($("model-select").value || "");
+    const wasReady = S.llmReady;
+    S.llmReady = !!j.llm_reachable;
+    applyLlmReady();
+    if (!wasReady && S.llmReady) loadModels();   // refresh selector once backend is up
+    banner.className = (auditOk && offline && S.llmReady) ? "ok" : "warn";
+  } catch(e){
+    $("st-audit").textContent = t("st_unreach");
+    $("st-offline").textContent = "";
+    $("st-model").textContent = "";
+    S.llmReady = false;
+    applyLlmReady();
+    banner.className = "err";
+  }
+}
+
+/* Gate generation on model readiness: while llama-server is still loading
+   (slow first read from USB), disable the action buttons and show a loading
+   note, so the user never fires a request that would return 502. */
+function applyLlmReady(){
+  const loadingBar = $("llm-loading");
+  if (loadingBar) loadingBar.classList.toggle("hidden", S.llmReady);
+  ["generate-btn","followup-btn"].forEach(id => {
+    const b = $(id);
+    if (b && !S.generating) b.disabled = !S.llmReady;
+  });
+}
+
+/* ================= wiring ================= */
+function init(){
+  try { S.lang = sessionStorage.getItem("medusb_lang") || "ja"; } catch(e){}
+  try { S.outLang = sessionStorage.getItem("medusb_outlang") || "ja"; } catch(e){}
+  loadOperator();
+  showView();
+  applyLang();
+  loadModels();
+  pollStatus();
+  setInterval(pollStatus, 5000);
+
+  $("lang-toggle").addEventListener("click", toggleLang);
+  setOutLang(S.outLang);
+  $("outlang-select").addEventListener("change", (ev) => setOutLang(ev.target.value));
+
+  $("login-form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const name = $("op-name").value.trim();
+    const staffId = $("op-id").value.trim();
+    const role = $("op-role").value;
+    if (!name || !staffId){
+      $("login-error").textContent = t("login_err");
+      return;
+    }
+    saveOperator({ name, staffId, role });
+    showView();
+    loadModels();
+    pollStatus();
+  });
+
+  $("logout-btn").addEventListener("click", () => {
+    if (S.generating) stopGeneration();
+    clearOperator();
+    S.presetId = null; S.turns = [];
+    $("chat-pane").innerHTML = "";
+    renderPresetForm(true);
+    showView();
+  });
+
+  $("generate-btn").addEventListener("click", () => {
+    const txt = collectFieldsText();
+    if (!txt){ return; }
+    generate(txt);
+  });
+  $("stop-btn").addEventListener("click", stopGeneration);
+  $("clear-btn").addEventListener("click", () => {
+    S.turns = [];
+    $("chat-pane").innerHTML = "";
+    setTokS(null);
+  });
+  const sendFollowup = () => {
+    const el = $("followup-input");
+    const v = el.value.trim();
+    if (!v || S.generating) return;
+    el.value = "";
+    generate(v);
+  };
+  $("followup-btn").addEventListener("click", sendFollowup);
+  $("followup-input").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); sendFollowup(); }
+  });
+  $("model-select").addEventListener("change", () => {
+    $("model-note").textContent = $("model-select").value;
+  });
+}
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>

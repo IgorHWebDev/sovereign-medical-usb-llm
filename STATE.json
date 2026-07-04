@@ -1,0 +1,997 @@
+{
+  "goal": "Fully-offline non-Transformer (RWKV-7/Mamba GGUF Q4, 1.5-3.7B, Japanese-capable) medical documentation copilot USB package: llama.cpp engine for win-x64 + mac-arm64, custom offline web UI with JA medical presets, auditgw Go gateway with tamper-evident hash-chain logging, dual no-admin launchers, bilingual docs. EXTENDED (Phase 1): m10 open JA-medical datasets (license-verified, no raw PHI), m11 baseline eval of both shipped models, m12 LoRA/SFT fine-tuning pipeline with local smoke or validated remote GPU recipe.",
+  "goalStatus": "complete",
+  "finalVerifyPassed": true,
+  "updatedAt": "2026-07-03T23:33:47Z",
+  "loopIteration": 16,
+  "milestones": [
+    {
+      "id": "m0",
+      "title": "Research/pin: DECISIONS.json + build/versions.lock",
+      "status": "verified",
+      "dependsOn": [],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "DECISIONS.json exists at repo root and parses as valid JSON",
+        "It pins BOTH models with exact HF repo, exact GGUF filename, direct download URL, expected sha256, expected byte size, license: PRIMARY = RWKV-7 World ~2.9B Q4_K_M (check Mungert/rwkv7-2.9B-world-GGUF and the shoumenchougou/rwkv7-gxx-gguf collection; prefer World over G1-reasoning variants); FALLBACK = ibm-granite/granite-4.0-h-micro-GGUF Q4_K_M. Every sha256 verified LIVE (HF API https://huggingface.co/api/models/<repo>?blobs=true exposes LFS sha256 oids) - never from memory",
+        "It pins one llama.cpp release tag with exact asset URLs + sha256s for llama-<TAG>-bin-win-cpu-x64.zip and llama-<TAG>-bin-macos-arm64.tar.gz, verified live against the GitHub release (releases publish checksums; else record the asset ETag/size and note it)",
+        "It records: llama-server port range (8080-8099), auditgw UI port range (8180-8199), API shape the UI will call (/v1/chat/completions with fallback /completion for RWKV template issues), and a source URL for every pinned checksum",
+        "build/versions.lock exists mirroring all pins in key=value form"
+      ],
+      "checkScript": "checks/verify_m0.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/DECISIONS.json",
+          "sha256": "0dcace387884393e9bcd9249433b6b6b6362d37277b0cdec29e9a1486e5caa14",
+          "bytes": 3817
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/build/versions.lock",
+          "sha256": "07923b6f2a9f8d5ebc23a2c133e0c4ec9ca694148b028b6827a083fabe28c300",
+          "bytes": 2255
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m0.sh",
+          "sha256": "775f86dc53cac4fac2f56bf7f01ae3384fac9664a969a56911fb42ccd3f9c064",
+          "bytes": 8148
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T19:02:24Z"
+    },
+    {
+      "id": "m1",
+      "title": "Scaffold: repo + usb_stick/ tree + checks stubs + GOAL.md",
+      "status": "verified",
+      "dependsOn": [
+        "m0"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "Directories exist: usb_stick/bin/win-x64, usb_stick/bin/mac-arm64, usb_stick/models, usb_stick/ui, usb_stick/audit, usb_stick/docs/LICENSES, build, src/auditgw, src/ui, src/launchers, checks, downloads, tests/prompts",
+        "GOAL.md exists with the goal statement and a milestone table (id/title/status)",
+        "usb_stick/stick.config stub exists (key=value: default_model, ctx=8192, threads=auto, llm_port_range, ui_port_range, offline_strict=true, no_mmap=true)",
+        "usb_stick/README_FIRST.html placeholder exists",
+        "checks/verify_m1.sh exists, is executable, and exits 0"
+      ],
+      "checkScript": "checks/verify_m1.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/GOAL.md",
+          "sha256": "c8a821cf52071aeb5e85d8d409b9037cf18ef830732e1e88739a71ec1d2a2631",
+          "bytes": 2168
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/stick.config",
+          "sha256": "1ad02320a9075ef3ddcbbdba35e71260c8a3c7e0727f2bff240a504c534f5f82",
+          "bytes": 368
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/README_FIRST.html",
+          "sha256": "3d6729f2a8a8bb1df3d34c510ceaa20cc1f02eef9968383aafbec15bdb4626d9",
+          "bytes": 7609
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m1.sh",
+          "sha256": "00b84190203d06abeae6ae5af68d781dfc6ff714c30f585be32f3ee85ba44410",
+          "bytes": 2793
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T21:43:40Z",
+      "notes": "Recorded-state repair after audit demotion: content untouched (all 5 DoD items pass, verify_m1.sh genuine and exits 0); prior hash drift traced to legitimate later-milestone evolution (GOAL.md milestone-table status updates, m7 bake-off default_model switch in stick.config, m8 bilingual README_FIRST.html rewrite). Artifact hashes re-recorded fresh AT RECORD TIME: GOAL.md hashed AFTER updating its m2 table row to verified (450456d6..., 1180 B) so the recorded hash matches the file as it exists post-record. STANDING NOTE for future audits: GOAL.md is a living file - the Record agent must refresh the m1 GOAL.md artifact hash whenever it edits the milestone table, or treat the m1 GOAL.md hash as advisory; stick.config and README_FIRST.html are owned by m7/m8 evolution and their m1-recorded hashes reflect the current (post-m8) state."
+    },
+    {
+      "id": "m2",
+      "title": "Engine binaries: llama.cpp for mac-arm64 (runs) + win-x64 (checksummed)",
+      "status": "verified",
+      "dependsOn": [
+        "m0",
+        "m1"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": true,
+      "definitionOfDone": [
+        "usb_stick/bin/mac-arm64/llama-server exists, is executable, and `llama-server --version` (or llama-cli --version) exits 0 on this machine, with its dylibs alongside",
+        "usb_stick/bin/win-x64/llama-server.exe exists with required DLLs (llama.dll, ggml*.dll) alongside; downloaded archive sha256 matched the pin in DECISIONS.json",
+        "Downloaded archives staged in downloads/ (kept for cache); only needed server binaries + libs copied into usb_stick/bin (not the whole toolset)",
+        "checks/verify_m2.sh exists and exits 0"
+      ],
+      "checkScript": "checks/verify_m2.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/downloads/llama-b9867-bin-macos-arm64.tar.gz",
+          "sha256": "8614dce043dcf54150185c6568c0fa092f8cfd2944617aac305e70a8ce1027e3",
+          "bytes": 11134835
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/downloads/llama-b9867-bin-win-cpu-x64.zip",
+          "sha256": "f2c64f32c5ce94e3b92bac030860ef3da6ec0e5b25eed3a5dc1d677f1da88547",
+          "bytes": 17486019
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/llama-server",
+          "sha256": "12df97ffa9d48545e96cd3237a71f78efd1cc0222f971cbd65f7ab57e793b128",
+          "bytes": 33472
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libllama-server-impl.dylib",
+          "sha256": "14b4c734fa0257c052536ad34e39c9fb92937dc4f38b0d030ba307a1e3709c50",
+          "bytes": 9084192
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libllama-common.0.dylib",
+          "sha256": "e98c9aa5a4a3ff7f3d38530c9b49f5a8fad639708529b8146b6b7fadb19bda12",
+          "bytes": 7792576
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libllama.0.dylib",
+          "sha256": "895e8fc94cdf64784b0274cd5f66276dfacc86b3d5dabbdba6b9275f6fcfac8b",
+          "bytes": 2644768
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libmtmd.0.dylib",
+          "sha256": "e069653a629c8b44a47c9589147e993d87883bdda442fb3603297740b7021352",
+          "bytes": 1042272
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml.0.dylib",
+          "sha256": "40cc703d0eb0b192d0af6ca12a82886832c82cddadc4ffe6a05a714639aa8ce1",
+          "bytes": 77616
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-base.0.dylib",
+          "sha256": "7c5a82f1183a87f16cbb496fd4915ef659d115c7f12b4bdbb3124bbd9ab337a2",
+          "bytes": 724000
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-cpu.0.dylib",
+          "sha256": "fb26bbe08e274b8316ec146f88f5110091929be560e3d58c3bdecceee994570f",
+          "bytes": 913808
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-blas.0.dylib",
+          "sha256": "f73bb1b7de30ef7fe8405588a9ed64557209a430d2a0c8dd42ee3ef1d6d7ffca",
+          "bytes": 76512
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-metal.0.dylib",
+          "sha256": "4b5d09626c688a6bed6d1d33574d4b3bc3633f6fa198a2c3d5bc66237a160296",
+          "bytes": 845760
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-rpc.0.dylib",
+          "sha256": "def8034223ce01fbfd0d2233adf145538cad839bfff77e70877858cd4275e380",
+          "bytes": 150720
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/llama-server.exe",
+          "sha256": "23f661cd60ad7b5c31e6aee3c16883ebdba5efbfad4b52619fd16be25bdb3e6b",
+          "bytes": 9216
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/llama-server-impl.dll",
+          "sha256": "691f1aa9b18851ce0d1defc0707dfe25aa47090b41b97c4c1ec840c93c0987cf",
+          "bytes": 9526272
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/llama.dll",
+          "sha256": "6c2e66edbe2550e02cad2937e1b368a8953c68dece15514b368d01f604b33b3d",
+          "bytes": 2654720
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/llama-common.dll",
+          "sha256": "1d958bbc67d28d6be10df5355a8fcda0f23aebc0a0bd3c9d08b6f6edc09d1fa6",
+          "bytes": 7932928
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/mtmd.dll",
+          "sha256": "5f225668c0ee127d3b4861e24a9b4b2c08dda9771a9a92b21c7b67e4c3bcc37d",
+          "bytes": 1248768
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml.dll",
+          "sha256": "909687db4c8ea283d6424383fab75414735882ce576a42ccbbce013de3ef0211",
+          "bytes": 86016
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-base.dll",
+          "sha256": "322dcf6a266d0aa72a7071604588d45e8dc72d3ea49d90557c881370e1f856e4",
+          "bytes": 763904
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/libomp140.x86_64.dll",
+          "sha256": "4a20c1e5c115c29771a12324513eb109badac72180f79481527ad79d996ffb33",
+          "bytes": 661856
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-x64.dll",
+          "sha256": "6bec02e0b477795b73803635720b0d601572dd6949cbf88c9586ff174c5873b4",
+          "bytes": 852480
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-sse42.dll",
+          "sha256": "0c1f1c3cf485b04852e5476d346eb524961b20c823b23800b698169aeae067fa",
+          "bytes": 859136
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-sandybridge.dll",
+          "sha256": "aab2112dae1e561efadbcba8d27a17054c19047c0bafdc9db152781f70b05cb2",
+          "bytes": 1036288
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-ivybridge.dll",
+          "sha256": "ade248d44870d98a84fa8eb86b82ad369fc94979e77af4539602de9982c5e807",
+          "bytes": 1055232
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-piledriver.dll",
+          "sha256": "a0ed148d19755f33d35cf337fc7e7dc375f051a69c231f94a08b6fc0637cffbd",
+          "bytes": 1058304
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-haswell.dll",
+          "sha256": "bb9a5da7a6114c307d0a3baaf07aea06ab9e5fbf1ddada726805c1b87abb077f",
+          "bytes": 1166336
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-alderlake.dll",
+          "sha256": "01568a4bcb0f4b0e08e7b7c598383ce9ca5984d8f0c118c0427648219133e332",
+          "bytes": 1162240
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-skylakex.dll",
+          "sha256": "5df0d7af7f061fa60086c42a84a67d53d674ab2f0baacadc7105ae6dbcf49f28",
+          "bytes": 1370112
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-cascadelake.dll",
+          "sha256": "f3471405752c19bf1f2d08ae78dbae8d97702c884034232a1ae09bc7bbf7e989",
+          "bytes": 1363456
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-cooperlake.dll",
+          "sha256": "c0554ae8b03ecbd6ee6f153b1f337f13e16a93fc09dc0362435e7d02bbfb2b2d",
+          "bytes": 1363968
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-cannonlake.dll",
+          "sha256": "c180f3132c7a72a83ada7759581d3891d5e11112171667fde740febf2de8b4e3",
+          "bytes": 1376768
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-icelake.dll",
+          "sha256": "583052790516382594ce4fb5e684924f0fc316f862d548215b1cd707a0fdfd7b",
+          "bytes": 1370112
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-sapphirerapids.dll",
+          "sha256": "9c550ee5baaf830b9651ebefe773063d58f1261e75b7042f59817e687894bc19",
+          "bytes": 1640960
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/ggml-cpu-zen4.dll",
+          "sha256": "eb3cd802ac64e7f485bd2ae968ce88e7d91cf9d80b59133f330fe5d4030ed83f",
+          "bytes": 1370624
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/LICENSES/llama.cpp-b9867-LICENSE.txt",
+          "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+          "bytes": 1078
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m2.sh",
+          "sha256": "98e1f628f873ca2e3f070d6540b3898e41153a33670a2d3bccb0c81bf1a5f37a",
+          "bytes": 3935
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T22:11:17Z",
+      "notes": "Re-verified after audit demotion via bookkeeping-only repair: NO files modified, copied, or re-downloaded. Artifact record refreshed to CURRENT on-disk hashes - the 10 mac-arm64 dylibs now carry m9's intentional /Users/->/build/ path-scrub + ad-hoc re-sign hashes (e.g. libllama-server-impl.dylib 14b4c734..., superseding pre-scrub d86b7d7a...), each cross-checked byte-identical to usb_stick/MANIFEST.sha256 and to m9's artifact list. Pristine dylibs were deliberately NOT re-extracted from the tarball (would regress m9 privacy scrub and break MANIFEST.sha256). All 4 DoD items re-verified live: mac llama-server --version exits 0 at pinned build 9867 (152d337fa) with all 10 dylibs as real files and valid ad-hoc codesign, 0 /Users/ strings; win-x64 set (exe + 22 files) byte-matches pinned zip, PE import closure satisfied (ggml-rpc.dll not imported, safely omitted); both staged archives byte-match DECISIONS.json pins; verify_m2.sh mechanically re-tests DoD from pins without hardcoding dylib hashes, exits 0. Toolset binaries (llama-cli/bench/etc.) still deliberately excluded. Windows exe not executed on real hardware - one-time launch test remains in WINDOWS_VALIDATION_CHECKLIST.md for final QA."
+    },
+    {
+      "id": "m3",
+      "title": "Models fetched + verified + live engine gate (DISK GATE >= 15 GB free)",
+      "status": "verified",
+      "dependsOn": [
+        "m0",
+        "m1",
+        "m2"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": true,
+      "definitionOfDone": [
+        "PRECONDITION for DOWNLOADS ONLY: >= 15 GB free (df -g /Users/osx/Documents, avail column) before fetching any missing GGUF; if below and a download is needed, return status=blocked. SKIP this gate entirely when both pinned GGUFs already exist in usb_stick/models/ with sha256 matching DECISIONS.json (the gate protects the download, not the finished package).",
+        "Both GGUFs exist in usb_stick/models/ and match the pinned byte size AND sha256 from DECISIONS.json (record hashes in artifacts so later loops only size-check)",
+        "usb_stick/models/model_meta.json exists: per model - file, sha256, params, arch (rwkv7/mamba2-hybrid), license, chat template mode (chat|raw)",
+        "LIVE ENGINE GATE: mac llama-cli loads the RWKV-7 GGUF and produces coherent Japanese for a short test prompt (e.g. answer in Japanese to a one-line instruction). If RWKV-7 fails to load or output is garbage, swap primary/fallback in DECISIONS.json + model_meta.json and record the swap decision in notes",
+        "checks/verify_m3.sh exists and exits 0 (size + recorded-hash check; not a full re-hash)"
+      ],
+      "checkScript": "checks/verify_m3.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/models/rwkv7-2.9B-world-q4_k_m.gguf",
+          "sha256": "d80eadb5a5db0689a6e3a6689128670530b30203c44404510f77f553368253e8",
+          "bytes": 1875793440
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/models/granite-4.0-h-micro-Q4_K_M.gguf",
+          "sha256": "bcc78b9b25450101d1ad90d4b9a264e1bac892f534dfb76066f4eec792fdf023",
+          "bytes": 1942564512
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/models/model_meta.json",
+          "sha256": "6898d7259e2a01dd47da8d6f134fa7113bf7084b6d34499962907d52f6bccf34",
+          "bytes": 1419
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m3.sh",
+          "sha256": "3968a80c768c8ddde12781d5e778d5c7799f166cdf29b4e7d1fe24b5ee057bef",
+          "bytes": 3469
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/m3_gate_output.txt",
+          "sha256": "6d5bca32da4357330eefbff7d0e05908d2a8c83b5e5b59bf0050da227190059c",
+          "bytes": 787
+        }
+      ],
+      "notes": "Re-verified after audit demotion + gate rescope: disk gate legitimately SKIPPED (downloads-only precondition; both pinned GGUFs already on stick with sha256 matching DECISIONS.json — and df -g showed 15 GB avail anyway). Zero downloads, zero rebuilds. Full sha256 re-hash by builder AND independently by verifier: rwkv7 d80eadb5...53e8 @ 1875793440 B, granite bcc78b9b...f023 @ 1942564512 B, both exact pin matches — later loops may size-check only using recorded hashes. model_meta.json (1419 B) valid: rwkv7=raw (User:/Assistant: promptFormat), granite mamba2-hybrid=chat, both apache-2.0, primary/fallback roles consistent with DECISIONS.json. LIVE ENGINE GATE re-run fresh twice this iteration through the SHIPPED usb_stick/bin/mac-arm64/llama-server: builder on 127.0.0.1:8093 (health ok, coherent JA diabetes answer 「糖尿病とは、血糖値が高い状態を指します。」, evidence rewritten temp+mv to checks/m3_gate_output.txt, 787 B); verifier independently on 127.0.0.1:8097 (coherent JA hypertension answer, 37 tokens). RWKV-7 World 2.9B stays PRIMARY, Granite stays FALLBACK, no swap, DECISIONS.json untouched. verify_m3.sh exits 0 (pin-vs-file size, record-vs-pin hash, meta schema/arch, CJK gate evidence). OPERATIONAL NOTES retained: b9867 llama-cli dropped -no-cnv and loops on EOF from non-tty — use llama-server or llama-completion for raw-mode RWKV-7, NOT llama-cli. Verifier minor non-blocking: stop strings require preceding newline so a same-line 'User:' continuation can follow the answer; output before it is coherent. downloads/ .part names consumed by design (mv is the completion step); llama archive tarballs untouched for m2.",
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T21:54:25Z"
+    },
+    {
+      "id": "m4",
+      "title": "auditgw: Go gateway built for both OSes + hash-chain unit test",
+      "status": "verified",
+      "dependsOn": [
+        "m0",
+        "m1"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "Go toolchain available (if `which go` fails, run `brew install go` - the user pre-approved this one-time install)",
+        "src/auditgw/ is a Go module (stdlib only, CGO_ENABLED=0) implementing: serve static UI dir on 127.0.0.1:<uiport>; reverse-proxy /v1/* and /completion to llama-server 127.0.0.1:<llmport> with streaming-safe tee (hash the reassembled SSE text, not raw bytes); require X-Operator-Id header on inference routes else 401 JSON error; append hash-chained JSONL per completed inference to <stick>/audit/audit-YYYYMM.jsonl with fields {seq, ts_utc, operator_id, model_file, model_sha256, prompt_sha256, response_sha256, params, prev_hash, entry_hash} where entry_hash = SHA256 of canonical JSON minus entry_hash; genesis entry with stick build id; `auditgw verify <file>` subcommand exits nonzero on any broken link; offline check (refuse/warn if a default route exists unless --allow-online, exposed via /api/status); --spawn-llm mode that launches and supervises llama-server itself; /api/shutdown for graceful exit",
+        "usb_stick/bin/mac-arm64/auditgw exists and `auditgw -h` exits 0; usb_stick/bin/win-x64/auditgw.exe exists and `file` reports PE32+ x86-64 (GOOS=windows GOARCH=amd64)",
+        "checks/verify_m4.sh exists and exits 0: appends 3 entries to a temp chain via the mac binary, verify passes; flips one byte in a copy, verify FAILS on the copy"
+      ],
+      "checkScript": "checks/verify_m4.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/auditgw/go.mod",
+          "sha256": "c82519d1d770db9926bf1213047a958c460ca152196c52bc75bc18d02996034a",
+          "bytes": 32
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/auditgw/main.go",
+          "sha256": "3e8addcef3de04aedb634c4b55afd8cfe2600a499646a6023404e45353501a31",
+          "bytes": 6014
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/auditgw/auditlog.go",
+          "sha256": "97f470314cc3345c4ddf83ffaa1fb22faaa180436974b94f21fd72a13b91f0a7",
+          "bytes": 8109
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/auditgw/auditlog_test.go",
+          "sha256": "a2ef314158f5627ca1adfba91d842bb3c31c85d706467c6c48d197379fc5b918",
+          "bytes": 4756
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/auditgw/proxy.go",
+          "sha256": "6d4eacbc4c8713c4fd3299642d969b943d78ec5d51ec7176547c9f47751de625",
+          "bytes": 7090
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/auditgw/server.go",
+          "sha256": "32727542573ad0d63394434a644eb70ed26b7521f30841849142db8f3e95a9db",
+          "bytes": 5602
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/auditgw/spawn.go",
+          "sha256": "e56941fefb69b81858c7894a84293d804e5b8fbb1440f6042f65fda41f96fdb9",
+          "bytes": 2493
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/auditgw",
+          "sha256": "6478cddce2ef4fe62d39b0ef5ced4b44e5db8090862d2d16d39e803c152eea1d",
+          "bytes": 6462322
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/win-x64/auditgw.exe",
+          "sha256": "5d35cb56965f7195ffdd5ce3b14fd6954769e7103923b38396242b64ceb792e9",
+          "bytes": 7051264
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m4.sh",
+          "sha256": "399cbcf7bee21f7e15c6e95d3acbb4cf189142f32e0df33fe4570d3ff8e86df6",
+          "bytes": 4687
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T19:22:52Z",
+      "notes": "Go 1.26.4 installed via brew (pre-approved). Stdlib-only module, CGO_ENABLED=0, cross-compiled mac-arm64 + win-x64. Live smoke verified: static UI, SSE streaming tee with reassembled-text hashing, 401 without X-Operator-Id, hash-chain append/verify/tamper-detect, offline guard via routing-table UDP probe, --spawn-llm supervision, clean /api/shutdown. --spawn-llm not yet exercised against a real llama-server; cover in m7 integration."
+    },
+    {
+      "id": "m5",
+      "title": "Custom web UI: single-file offline, JA medical presets, operator capture",
+      "status": "verified",
+      "dependsOn": [
+        "m1"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "src/ui/presets.json is the source of truth: presets for taiin-summary (retirement/discharge summary), operative note, nursing record, referral letter, de-identification assist - each {id, label_ja, label_en, system_prompt (with few-shot skeleton scaffolding in Japanese), input_fields, template_mode: chat|raw, stop[]}; the de-id preset output must carry the caveat that recall is not legal-grade and a human must verify",
+        "usb_stick/ui/index.html is fully self-contained (all CSS/JS inline, presets inlined by src/ui/build_ui.sh): operator login view (name + staff id + role -> sessionStorage -> X-Operator-Id header on every request), preset picker (JA-first labels, EN toggle), streaming chat pane with model selector and tok/s display from llama-server timings, audit/offline status banner fed by /api/status",
+        "grep -E \"https?://\" across usb_stick/ui returns zero hits outside 127.0.0.1/localhost references",
+        "checks/verify_m5.sh exists and exits 0"
+      ],
+      "checkScript": "checks/verify_m5.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/ui/presets.json",
+          "sha256": "4c0e0513f8bd0880972e5f1c5d3f2d6e2296b83945e9d4a96c66c7e1f225b9f5",
+          "bytes": 15173
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/ui/index.template.html",
+          "sha256": "618faa4652f977db84caa17fdf28e43f2a995eab33bfddefc61e460e747aef89",
+          "bytes": 27142
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/ui/build_ui.sh",
+          "sha256": "f4fbeafbe1300b172bb2cb2d5f04430bf87c60d3f85506eaa37d4d1f6a707fae",
+          "bytes": 2929
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/ui/index.html",
+          "sha256": "ed80cafd231ca26de7a2fb08e1cb50383352d162ec308ccf42c3adc1d51d4840",
+          "bytes": 43132
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m5.sh",
+          "sha256": "056e73bced4407aba5c5bdfcc176153e384b647f7c114e837a877b036fa5b886",
+          "bytes": 6861
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T19:22:52Z",
+      "notes": "5 JA-first presets (taiin-summary, operative-note, nursing-record, referral-letter, deid-assist) with few-shot skeletons; de-id caveat (non-legal-grade recall + human verify, JA+EN) enforced. Single-file UI built by build_ui.sh, byte-reproducible, zero external URLs, all endpoints relative via apiFetch with X-Operator-Id/-Name/-Role headers. Chat presets use /v1/chat/completions with /completion RWKV raw fallback; deid-assist is template_mode=raw."
+    },
+    {
+      "id": "m6",
+      "title": "Dual launchers: START_MAC.command + START_WINDOWS.bat (+ STOP)",
+      "status": "verified",
+      "dependsOn": [
+        "m1",
+        "m2",
+        "m4"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "src/launchers/ sources exist and are copied to usb_stick/START_MAC.command, usb_stick/START_WINDOWS.bat, usb_stick/STOP_MAC.command, usb_stick/STOP_WINDOWS.bat",
+        "Mac launcher: resolves its own directory (relative paths only), self-heals quarantine (xattr -dr com.apple.quarantine, errors ignored), RAM check via sysctl hw.memsize (warn < 8 GB), free-port scan in the configured ranges, starts auditgw --spawn-llm (auditgw supervises llama-server), waits on health, opens browser to the UI, traps INT/TERM to kill children and write a session-end audit event",
+        "Windows launcher: same logic, ASCII-only, CRLF line endings; auditgw is the process supervisor so the .bat stays trivial; opens browser via start \"\"; STOP_WINDOWS.bat calls /api/shutdown via curl.exe (present on Win10 1803+) with taskkill fallback",
+        "bash -n passes on the .command files; grep for /Users/ inside any launcher returns nothing; file(1) confirms .bat files are ASCII with CRLF",
+        "checks/verify_m6.sh exists and exits 0 (static checks only; live launch is m7)"
+      ],
+      "checkScript": "checks/verify_m6.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/launchers/START_MAC.command",
+          "sha256": "cbc55b2b29e705fc4bd42b0f897628cb191b0c3196ce2647d01719fcba0c4e47",
+          "bytes": 8437
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/launchers/STOP_MAC.command",
+          "sha256": "47af62f4742863e69610469c85b3602106d66327fe0aa9a70cc7ee402787486f",
+          "bytes": 1999
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/launchers/START_WINDOWS.bat",
+          "sha256": "e3432179d7c04c25d5e8f056eddecc5a211ad8a38b88fd86b52aa6917a62b48d",
+          "bytes": 6369
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/src/launchers/STOP_WINDOWS.bat",
+          "sha256": "197522dc8c237cefaf74ed5488b1491d1ba41d1ff9fa511336503ff165343fc3",
+          "bytes": 2583
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/START_MAC.command",
+          "sha256": "cbc55b2b29e705fc4bd42b0f897628cb191b0c3196ce2647d01719fcba0c4e47",
+          "bytes": 8437
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/STOP_MAC.command",
+          "sha256": "47af62f4742863e69610469c85b3602106d66327fe0aa9a70cc7ee402787486f",
+          "bytes": 1999
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/START_WINDOWS.bat",
+          "sha256": "e3432179d7c04c25d5e8f056eddecc5a211ad8a38b88fd86b52aa6917a62b48d",
+          "bytes": 6369
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/STOP_WINDOWS.bat",
+          "sha256": "197522dc8c237cefaf74ed5488b1491d1ba41d1ff9fa511336503ff165343fc3",
+          "bytes": 2583
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m6.sh",
+          "sha256": "4f08935236592a13ff07af0716ffa7c061ca4136c2adec346e2e44511f0bb1fa",
+          "bytes": 7427
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T19:39:16Z",
+      "notes": "All 4 launchers in src/launchers/ copied byte-identically to usb_stick/ (.command chmod +x, bash-3.2-safe). Mac: auditgw serve --spawn-llm in background, session state in audit/session-mac.env, graceful /api/shutdown first then pkill -P + kill -9 fallback, session-end hash-chained audit event on every exit path, /dev/tcp free-port scan, xattr quarantine self-heal, hw.memsize RAM warn. Windows: ASCII/CRLF, PowerShell Get-CimInstance RAM check (wmic avoided), netstat port scan, auditgw as sole supervisor, curl.exe health wait, forward-slash relative paths (auditgw splitArgs is whitespace-only - no spaces possible). STOP scripts self-identify auditgw via /api/status before POSTing /api/shutdown; taskkill fallback on Windows. verify_m6.sh: 59 static assertions incl. byte-level ASCII/CRLF check and live auditgw -h flag drift check, exit 0. Live end-to-end launch deferred to m7; launchers handle absent model files (m3 pending) with clear error + fallback-model path; optional models/<name>.gguf.sha256 sidecar picked up for --model-sha256."
+    },
+    {
+      "id": "m7",
+      "title": "macOS end-to-end smoke test + Japanese bake-off",
+      "status": "verified",
+      "dependsOn": [
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m6"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "tests/prompts/discharge_summary_ja.json exists: structured fake patient course in Japanese + required output section headers to assert (shape assertions, not content)",
+        "checks/smoke_mac.sh exists and exits 0: creates/attaches an exFAT sparseimage via hdiutil, rsyncs usb_stick/ onto it, launches from the image via the real START_MAC.command path (or its extracted logic), polls health OK, POSTs the discharge-summary case through auditgw, asserts non-empty Japanese output containing required section headers, records tok/s from timings, asserts the audit chain grew >= 1 entry and `auditgw verify` passes, tamper test (flip one byte in a copy -> verify fails), clean shutdown with no orphan llama-server/auditgw processes, detaches the image",
+        "tests/bakeoff_ja.sh exists and has been run: all 5 presets x both models, outputs + tok/s written to tests/bakeoff_results.md for the human to pick default_model (report the recommendation but do not require the human pick to pass this milestone)"
+      ],
+      "checkScript": "checks/smoke_mac.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/tests/prompts/discharge_summary_ja.json",
+          "sha256": "9d8d3a0abf3398cb0e951cc8bd7c0ee48bb474618682a09f7513c65695445f0f",
+          "bytes": 3021
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/smoke_mac.sh",
+          "sha256": "2d7f685c9d4600f72fb3041e946f7251d7e61c41168b3096f668606c1669f9cb",
+          "bytes": 14044
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/tests/bakeoff_ja.sh",
+          "sha256": "278d0dc9114b98e5964c80424a16c57367bb620d4c7803efab18612ce71c7f80",
+          "bytes": 9978
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/tests/prompts/bakeoff_cases_ja.json",
+          "sha256": "24a8b783db5b2f6e18e4c5a718b3e7cb965fd2cf27ac4decf2f5859092c70534",
+          "bytes": 4045
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/tests/bakeoff_results.md",
+          "sha256": "9c6950d6dab9057c25529d7a1ed6520097bb394cec541c36cb8608b124e2d48a",
+          "bytes": 13337
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T21:10:01Z",
+      "notes": "SMOKE 12/12 green twice on final script (68.2/68.5 tok/s gen, 908 tok/s prompt eval through auditgw on exFAT image); verifier independently re-ran: exit 0, 68.3 tok/s, sections 7/11 with required 3/3, chain seq 0->1 intact, tamper verify failed as required, no orphans, non-forced detach. PLATFORM FINDING baked into script: macOS mounts exFAT via sandboxed UserFS/FSKit daemon with NO TCC access to ~/Documents - sparseimage must live in canonicalized ${TMPDIR}/medusb_smoke_m7 (pwd -P fixes /var->/private/var), logs/metrics in tests/smoke_work/. Orphan detection via lsof on mounted fs + port probes (auditgw/llama-server run with RELATIVE cmdlines, invisible to pgrep -f <path>). RWKV-7 sampling calibrated live: temp 0.3 or repeat_penalty cause severe repetition loops; temp 1.0/top_p 0.3/presence 0.5/seed 42 is clean and deterministic (test JSON carries these). BAKE-OFF RUN (5 presets x 2 models, tests/bakeoff_results.md): granite-4.0-h-micro-Q4_K_M 20/20 section markers @ 61.4 tok/s vs rwkv7-2.9B-world 13/20 @ 68.1 tok/s; rwkv7 FAILED deid-assist (echoed PII unmasked while claiming replacements - worst case per r45 caveat) while granite masked correctly with mandatory caveat. RECOMMENDATION FOR HUMAN: set default_model=granite-4.0-h-micro-Q4_K_M.gguf in usb_stick/stick.config (swap default_model/fallback_model; smoke stays green either way since raw /completion works for both). Human pick not required for this milestone. Nothing under usb_stick/ or downloads/ modified; repo usb_stick/audit/ still empty."
+    },
+    {
+      "id": "m8",
+      "title": "Bilingual docs + Windows manual checklist + licenses",
+      "status": "verified",
+      "dependsOn": [
+        "m5",
+        "m6"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "usb_stick/docs/ contains QUICKSTART_EN.md, QUICKSTART_JA.md (clinician-level, 3 steps), ENCRYPTION_NOTE_EN.md + _JA.md (hardware-keypad drive recommendation e.g. IronKey Vault Privacy 80ES / Apricorn Aegis; VeraCrypt rejected - needs admin driver; BitLocker-To-Go rejected - no macOS; exFAT rationale; drive custody register requirement), WINDOWS_VALIDATION_CHECKLIST.md (numbered manual test steps for the first real Windows PC incl. SmartScreen guidance), CUSTODY_REGISTER_TEMPLATE.md",
+        "usb_stick/docs/LICENSES/ contains Apache-2.0 texts + model card notes + llama.cpp MIT + a disclaimer: advisory drafting tool, no clinical validation, physician confirms every output (PMDA non-device posture)",
+        "usb_stick/README_FIRST.html is bilingual EN/JA, renders offline, links only to files that exist on the stick",
+        "checks/verify_m8.sh exists and exits 0 (existence + link-check: every relative path referenced in docs resolves)"
+      ],
+      "checkScript": "checks/verify_m8.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/QUICKSTART_EN.md",
+          "sha256": "32a761de8496328d0ffc735c8879ef2b782fbbd294e01f45e33012e303ff51e8",
+          "bytes": 3001
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/QUICKSTART_JA.md",
+          "sha256": "adce6f75aa19c299ce2a70345fe5d981794dc6857e283e5607e3bf1f3e6e9285",
+          "bytes": 3993
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/ENCRYPTION_NOTE_EN.md",
+          "sha256": "ab7a7badf08cd8d3a050c24d10b2274bccd2d6781521bc84ec12abee237a3c67",
+          "bytes": 2824
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/ENCRYPTION_NOTE_JA.md",
+          "sha256": "ff56a24e772256407497e5c000f4bd9ff3c64d24ba324f539d12e721c5f251e1",
+          "bytes": 3677
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/WINDOWS_VALIDATION_CHECKLIST.md",
+          "sha256": "c015e38e7a8dfe7dce465c875c4da83eeb6bf84df868052fa289735a184ceaaf",
+          "bytes": 7104
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/CUSTODY_REGISTER_TEMPLATE.md",
+          "sha256": "ac3a45179e7c9c7ec21c5450fcd460a357cdd2fe48a22ee4b83952022e21c6e7",
+          "bytes": 2881
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/LICENSES/Apache-2.0.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/LICENSES/llama.cpp-b9867-LICENSE.txt",
+          "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+          "bytes": 1078
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/LICENSES/MODEL_CARD_NOTES.md",
+          "sha256": "b1e541c7304bd59de8f3fa22671452f17f87c5d2a1a1ba3ceb17aff912e159e1",
+          "bytes": 3356
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/docs/LICENSES/DISCLAIMER.md",
+          "sha256": "d2ac2de9e05cb94eaebda36183cb40a964a728c808c565e5ab7c5e0a0c49951e",
+          "bytes": 3835
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/README_FIRST.html",
+          "sha256": "3d6729f2a8a8bb1df3d34c510ceaa20cc1f02eef9968383aafbec15bdb4626d9",
+          "bytes": 7609
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m8.sh",
+          "sha256": "05c6552b7fcb9ddd003866db3dc843ed2dc5c9aa736b856193cd14be74bc46c1",
+          "bytes": 9442
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T19:55:12Z",
+      "notes": "All 11 doc/license deliverables + rewritten bilingual README_FIRST.html shipped and verified: quickstarts exactly 3 steps EN/JA, encryption note recommends IronKey Vault Privacy 80ES / Apricorn Aegis and rejects VeraCrypt (admin driver) + BitLocker-To-Go (no macOS) with exFAT rationale and custody-register requirement, 24-step Windows validation checklist (SmartScreen More-info->Run-anyway, AppLocker/AV escalation, netstat loopback, auditgw.exe verify), bilingual custody register template. LICENSES/: canonical Apache-2.0.txt (sha256 cfc7749b... matches apache.org canonical, fetched via downloads/*.part discipline), llama.cpp MIT, MODEL_CARD_NOTES.md (both models with repo/file/sha256/license, no-medical-training + r45 de-id recall caveats), bilingual DISCLAIMER.md with PMDA non-device/SaMD-out-of-scope posture. README links verified: 36 relative links across 9 files all resolve; zero external URLs. models/ referenced as text only (m3 blocked) so link check stays valid regardless of m3. verify_m8.sh: 11 existence+size checks, ~60 content markers, JA-character checks, anti-vacuous link checker; demonstrably fails on defects."
+    },
+    {
+      "id": "m9",
+      "title": "Final package validation + MANIFEST.sha256",
+      "status": "verified",
+      "dependsOn": [
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m6",
+        "m7",
+        "m8"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "checks/final_validate.sh exists and exits 0: every checks/verify_m*.sh passes; usb_stick/MANIFEST.sha256 regenerated (every file except MANIFEST itself and audit/*.jsonl) and verifies; total usb_stick/ size reported and < 28 GB (32 GB stick with margin); grep -r \"/Users/\" usb_stick/ returns nothing (excluding MANIFEST); a fresh genesis audit entry embeds the manifest hash"
+      ],
+      "checkScript": "checks/final_validate.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/final_validate.sh",
+          "sha256": "0a34c2a11a166583ea94dddbae4d44fdedf753192cbb631e74a212fc0d3f28dd",
+          "bytes": 6627
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/build/patch_mac_paths.sh",
+          "sha256": "4ef7f99194abf1083bcd69df0860f1ebe75adb18a947573f0ad4d2289b5711a4",
+          "bytes": 2149
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/MANIFEST.sha256",
+          "sha256": "996c6f32df29f8ff5c905cb009b0d8391f2d2f6c8de6eb46eacc5526e52df4a3",
+          "bytes": 5369
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/audit/genesis.jsonl",
+          "sha256": "2e7dba4d6908ef0cd90610a7cab693923a04e7d4bb65143f45011dd34bb41624",
+          "bytes": 1075,
+          "volatile": true
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-rpc.0.dylib",
+          "sha256": "def8034223ce01fbfd0d2233adf145538cad839bfff77e70877858cd4275e380",
+          "bytes": 150720
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libllama.0.dylib",
+          "sha256": "895e8fc94cdf64784b0274cd5f66276dfacc86b3d5dabbdba6b9275f6fcfac8b",
+          "bytes": 2644768
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libmtmd.0.dylib",
+          "sha256": "e069653a629c8b44a47c9589147e993d87883bdda442fb3603297740b7021352",
+          "bytes": 1042272
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml.0.dylib",
+          "sha256": "40cc703d0eb0b192d0af6ca12a82886832c82cddadc4ffe6a05a714639aa8ce1",
+          "bytes": 77616
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libllama-server-impl.dylib",
+          "sha256": "14b4c734fa0257c052536ad34e39c9fb92937dc4f38b0d030ba307a1e3709c50",
+          "bytes": 9084192
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-metal.0.dylib",
+          "sha256": "4b5d09626c688a6bed6d1d33574d4b3bc3633f6fa198a2c3d5bc66237a160296",
+          "bytes": 845760
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libllama-common.0.dylib",
+          "sha256": "e98c9aa5a4a3ff7f3d38530c9b49f5a8fad639708529b8146b6b7fadb19bda12",
+          "bytes": 7792576
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-base.0.dylib",
+          "sha256": "7c5a82f1183a87f16cbb496fd4915ef659d115c7f12b4bdbb3124bbd9ab337a2",
+          "bytes": 724000
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-blas.0.dylib",
+          "sha256": "f73bb1b7de30ef7fe8405588a9ed64557209a430d2a0c8dd42ee3ef1d6d7ffca",
+          "bytes": 76512
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/usb_stick/bin/mac-arm64/libggml-cpu.0.dylib",
+          "sha256": "fb26bbe08e274b8316ec146f88f5110091929be560e3d58c3bdecceee994570f",
+          "bytes": 913808
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T21:29:23Z",
+      "notes": "final_validate.sh exits 0 end-to-end (verifier re-ran live, 34.9s): all 8 verify_m*.sh pass (m0-m6, m8; m7 covered by smoke_mac.sh); MANIFEST.sha256 deterministically regenerated (55 files, relative paths, excludes MANIFEST + audit/*.jsonl) and shasum -c clean, manifest sha256 996c6f32df29f8ff5c905cb009b0d8391f2d2f6c8de6eb46eacc5526e52df4a3; usb_stick/ 3811256 KB (3.63 GB) < 28 GB; zero /Users/ strings anywhere on the stick after scrubbing GitHub-CI paths from 10 mac-arm64 dylibs (byte-length-preserving /Users/->/build/ replacement + ad-hoc codesign re-sign; codesign -v passes on all; build/patch_mac_paths.sh preserves the fix idempotently for m2 rebuilds - the 10 dylib hashes in THIS artifact list supersede the m2 pre-scrub hashes); fresh genesis chain audit/genesis.jsonl embeds manifest hash in seq-0 stick_build_id, auditgw verify OK (2 entries), circularity guard keeps audit/*.jsonl out of the manifest. Patched engine proven functional: llama-server --version OK + full 12/12 smoke_mac.sh re-run at 61.7-61.8 tok/s from exFAT image. NOTE for re-verifiers: interactive shell aliases grep to ugrep -I (skips binaries) - use /usr/bin/grep to reproduce the /Users/ check; Windows binaries carry no /Users/ strings (MSVC CI uses D:\\a\\ paths). VOLATILE ARTIFACT: audit/genesis.jsonl is rewritten with a fresh ts_utc on every final_validate.sh run, so its recorded sha256 is only valid for the most recent run (marked volatile:true); the stable anchor is the embedded manifest hash 996c6f32..., which must match. Hash re-recorded 2026-07-03T22:23:25Z after the usb-verify final audit's mandated live re-run (chain verified intact, 2 entries)."
+    },
+    {
+      "id": "m10",
+      "title": "Datasets: open Japanese medical eval + SFT corpora researched, license-verified, fetched",
+      "status": "verified",
+      "dependsOn": [
+        "m0"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": true,
+      "definitionOfDone": [
+        "Internet research performed LIVE (WebSearch/WebFetch/curl - never from memory): identify open Japanese medical datasets suitable for (a) EVALUATION - candidates to verify: IgakuQA (JP medical licensing exam QA), JMedBench, JMMLU medical subsets - and (b) SFT INSTRUCTION TUNING - open Japanese medical instruction/QA corpora (e.g. ApolloCorpus JA portions, llm-jp medical instruction sets, or better candidates found in research). Verify every URL resolves and read the actual license text live",
+        "DATASETS.json at repo root pins >= 1 eval benchmark AND >= 1 SFT-usable corpus: exact download URL, license (must permit local research use; record any commercial-use or redistribution caveats explicitly), size, format, anonymization status (exam-derived / synthetic / de-identified are acceptable; datasets containing raw PHI are FORBIDDEN - reject and note), citation, and sha256 after download",
+        "DISK GATE (downloads only): >= 10 GB free (df -g /Users/osx/Documents) before fetching; skip gate if files already downloaded and hash-matched. Datasets downloaded to datasets/eval/ and datasets/sft/ via the standard downloads/*.part staging; sha256s recorded in DATASETS.json",
+        "checks/verify_m10.sh exists and exits 0: DATASETS.json parses, every entry has url+license+anonymization+sha256 fields, downloaded files exist and match recorded sizes/hashes"
+      ],
+      "checkScript": "checks/verify_m10.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/DATASETS.json",
+          "sha256": "5c3ba1b2e005954a96a6436a544b19de1bac36ed93061c2e462a204fb1efdf54",
+          "bytes": 6363
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m10.sh",
+          "sha256": "2b1998570a00ed03788dc34af8b24f3cdf21da2629a38348973615250ed8f056",
+          "bytes": 3235
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/datasets/eval/jmmlu_medical_test.jsonl",
+          "sha256": "8274725a2c36c0a371f1950fa8fff83cf6ea0beda4b92e3a0a8d7f6b7aeee3ab",
+          "bytes": 666071
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/datasets/sft/medqa_jp_train.jsonl",
+          "sha256": "d93d25cfaaa3a802b608e33fa2bcdd10d4d457e907c21ff26d4b973938aee7e9",
+          "bytes": 32240913
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "df -g /Users/osx/Documents shows >= 10 GB available; alternatively dataset files placed manually in datasets/eval/ and datasets/sft/ satisfy the fetch step",
+      "verifiedAt": "2026-07-03T22:43:37Z",
+      "notes": "Live research (WebSearch/WebFetch/curl 2026-07-03/04) covered IgakuQA, JMedBench, JMMLU, ApolloCorpus. PINNED EVAL: jmmlu_medical test split from Coldog2333/JMedBench -> datasets/eval/jmmlu_medical_test.jsonl (1271 native-JA medical MCQA rows, CC-BY-SA-4.0 verified in JMedBench README license table AND upstream nlp-waseda/JMMLU spdx; the 3 CC-BY-NC-ND JMMLU subjects are non-medical). PINNED SFT: medqa_jp train from JMedBench -> datasets/sft/medqa_jp_train.jsonl (10178 USMLE-style JA clinical-vignette QA pairs, MIT verified; gpt-4-0613 translation - machine-translation errors possible, human review before clinical use). REJECTED (documented in DATASETS.json.researchCandidates): IgakuQA (license unresolvable live - GitHub API license=null, JMedBench marks '-'), ApolloCorpus (no Japanese portion). No raw PHI: exam-derived / hypothetical-patient vignettes only. Disk gate 13 GB >= 10 GB; both files staged via downloads/*.part, sha256-verified, mv'd. Verifier independently re-fetched all URLs/licenses live 2026-07-04 (SFT HF LFS x-linked-etag exactly equals recorded sha256) and confirmed verify_m10.sh is a genuine test (JSON parse, role counts, required fields, PHI guard, size+sha256 vs actual files, per-line JSONL validation), exit 0. NOTE: this milestone introduces the new top-level datasets/ directory (datasets/eval, datasets/sft) - outside usb_stick/, not in MANIFEST.sha256."
+    },
+    {
+      "id": "m11",
+      "title": "Baseline eval harness: both shipped GGUFs scored on a JA medical benchmark",
+      "status": "verified",
+      "dependsOn": [
+        "m3",
+        "m10"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "tests/eval_ja_med.py (or .sh) runs a FIXED, seed-stable subset (>= 50 items, exact item ids recorded) of the pinned eval benchmark against BOTH GGUFs via the shipped mac llama-server (temperature 0), scoring accuracy on choice questions and/or format adherence on generative items",
+        "evals/baseline_results.json + evals/baseline_results.md record per-model scores, item counts, tok/s, runtime, and the subset item ids so the run is reproducible",
+        "Honest framing required in the .md: 2-3B general-purpose models are expected to score far below medical-tuned large models; these numbers are the yardstick for measuring future fine-tunes, not a clinical-capability claim",
+        "checks/verify_m11.sh exists and exits 0: re-runs a 5-item live smoke subset through llama-server and confirms both results files parse and contain entries for both models"
+      ],
+      "checkScript": "checks/verify_m11.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/tests/eval_ja_med.py",
+          "sha256": "e451496aa002c3cb0d524e2fa2ad32081b98e061567f11e7e1e1fa6a194e3847",
+          "bytes": 16421
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/evals/baseline_results.json",
+          "sha256": "aef79f082235e899a3b920c420419e1271acd7519d90d4a43e97636bb8497b4b",
+          "bytes": 38693
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/evals/baseline_results.md",
+          "sha256": "98864c83c2a8b16587e6fb7acaa6a6829a2cbf03b8db5b98efa551c364fd4fe4",
+          "bytes": 2821
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m11.sh",
+          "sha256": "1a61a5839dbbd9cd105b8f0badbd05694fee5155735912403901475f2f2d74e7",
+          "bytes": 4463
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T22:54:59Z",
+      "notes": "Baseline eval complete, all 4 DoD verified by adversarial pass. tests/eval_ja_med.py: self-contained harness managing shipped mac-arm64 llama-server lifecycle (free-port scan 8090-8099, /health poll, --no-mmap, ctx 8192); deterministic Random(42)-shuffled prefix subset of 60 items (>=50 floor; --n 5 smoke is a strict prefix of --n 60), temperature 0 / top_k 1 / seed 42; RWKV-7 raw via /completion (User:/Assistant:), Granite chat via /v1/chat/completions per model_meta.json; answer parser normalizes full-width A-D. BASELINE (60 items, JMMLU medical MCQA, dataset sha 8274725a... pin-matched): RWKV-7 2.9B 35.0% (21/60) @ 73.2 tok/s, granite-4.0-h-micro 40.0% (24/60) @ 113.7 tok/s, format adherence 100%/100%, both above 25% random floor, ~65s wall, engine llama.cpp b9867. Verifier independently re-derived the 60-id subset from the dataset ('subset reproduces: True'), recomputed correct counts from per-item records (21/21, 24/24, 0 gold mismatches), and anti-fabrication cross-checked: live temp-0 smoke predictions exactly match baseline first-5 prefix for both models (10/10). Honest-framing section present in .md (yardstick for future fine-tunes, not a clinical-capability claim). verify_m11.sh: substantive (JSON field validation, both models, >=50 ids, temp==0, honest-framing grep, LIVE 5-item smoke through both models), exit 0. Smoke work under tests/smoke_work/m11_verify/ is scratch, not a deliverable. New top-level evals/ directory introduced (outside usb_stick/, not in MANIFEST.sha256)."
+    },
+    {
+      "id": "m12",
+      "title": "Fine-tuning pipeline: LoRA/SFT kit + local smoke run (or validated remote GPU recipe)",
+      "status": "verified",
+      "dependsOn": [
+        "m10",
+        "m11"
+      ],
+      "attempts": 1,
+      "maxAttempts": 3,
+      "networkHeavy": false,
+      "definitionOfDone": [
+        "training/ contains a complete SFT/LoRA kit for a chosen target model (prefer the stick default granite-4.0-h-micro; document the RWKV-7 alternative via its native RWKV-LM trainer): dataset prep script (DATASETS.json sft corpus -> chat-format JSONL), training script + config, pinned requirements, and TRAINING.json recording the framework choice (mlx-lm / PyTorch-MPS / RWKV-LM) with LIVE-verified support for the target architecture",
+        "FEASIBILITY BRANCH, machine-checkable either way: (a) if local hardware suffices (check sysctl hw.memsize RAM and framework arch support), run a smoke LoRA: >= 10 optimizer steps on >= 32 real SFT examples from datasets/sft/, saving the adapter artifact + a loss log showing finite, decreasing loss; OR (b) if infeasible, training/REMOTE_RECIPE.md plus a validated kit (python -m compileall passes on all kit scripts, requirements pinned with versions) for an off-site GPU run. checks/verify_m12.sh must pass whichever branch was taken and print which branch",
+        "If an adapter was produced: document and attempt the adapter->GGUF merge/convert path; run a 20-item eval comparison vs baseline into evals/tuned_vs_baseline.md (pipeline proof only - no quality bar required; real gains need the hospital gold set + GPU)",
+        "training/README_TRAINING.md documents the real hospital path per the FDE proposal: gold-set acquisition via the AI Medical Centre / Data Access Review Committee, off-site GPU SFT on de-identified data ONLY, re-quantize to GGUF, re-pin in DECISIONS.json, then re-run m7 bake-off and m9 validation before any tuned model ships on the stick",
+        "checks/verify_m12.sh exists and exits 0"
+      ],
+      "checkScript": "checks/verify_m12.sh",
+      "artifacts": [
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/prep_dataset.py",
+          "sha256": "3b71cc501246ecf972abb088f7818860f5d28092c30a17ec21ce16033d3e98c4",
+          "bytes": 4794
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/train_config.yaml",
+          "sha256": "4c0db6edd3e74d921933cd57d0ade670bd6392a44665816b6ed0fae5851c45fa",
+          "bytes": 744
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/run_smoke_lora.sh",
+          "sha256": "93133b6737bd934d72d26a32d34d0b84d82d3b241a48e0ccdda9d80607383156",
+          "bytes": 1055
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/fuse_and_convert.sh",
+          "sha256": "ca852991e68a0cf430dd4c24b22e47eb6be1d248846f1a5ab0dfe2d6f293ec78",
+          "bytes": 1997
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/eval_tuned_vs_baseline.py",
+          "sha256": "c44e80917a0239ad3cfda63f820bb5c51190d95ade5e46c4f9d2fc3e95649dd2",
+          "bytes": 5976
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/requirements.txt",
+          "sha256": "3325e6c82c7c1b1b3c1640929a123d71e000100c0f27aa7caeaba1f4e65da651",
+          "bytes": 924
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/TRAINING.json",
+          "sha256": "871d202ef56ddcfae7b935c7d6927483ec9e72e1f27a1abfd49b6888fb7581c6",
+          "bytes": 5029
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/README_TRAINING.md",
+          "sha256": "19429b601517165fafb9b5a0e67d6fc9bbfe6fe7cc79841dd859c66fd9b05bf1",
+          "bytes": 5104
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/REMOTE_RECIPE.md",
+          "sha256": "934a421a7711d0a95c2991bb65b94af98f89cda37140c128b2c9eac9ca361e0d",
+          "bytes": 4414
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/adapters/adapters.safetensors",
+          "sha256": "87b49dd04605e2bed8b215780e549ffdf33983e039014d07f5d7916f6d17d4ef",
+          "bytes": 12040864
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/adapters/adapter_config.json",
+          "sha256": "8794622ca466532f69e02191e0911a6f2c53ccf5c846b71c64d197c139459433",
+          "bytes": 924
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/logs/smoke_train.log",
+          "sha256": "8bacbd09d780c32fcdcc0dff419ee0a14518970bef53f474211cc1e2632d4806",
+          "bytes": 3130
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/logs/fuse_convert.log",
+          "sha256": "39bcfb11ca00a99c5def8c5c7b5b0afe9c44f87d55073ac55bad9d8386bd1df3",
+          "bytes": 1137
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/evals/tuned_vs_baseline.md",
+          "sha256": "cb55f745c6dc645850299e71cad8f7370c7ff8292343373b294f4f9dd6f0e7e7",
+          "bytes": 4324
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/checks/verify_m12.sh",
+          "sha256": "2e89fca9f997443887c3554f83022b1d78cb1feda2843cf35986cd36620ae20e",
+          "bytes": 4959
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/base_model/model.safetensors",
+          "sha256": "573654ce0613804f3e0e5ec692b039f907f13c88273dc08993b9adbeb04428f1",
+          "bytes": 1796848117
+        },
+        {
+          "path": "/Users/osx/Documents/med_l_llm/training/fused_model/model.safetensors",
+          "sha256": "4dded56e2e9af0c2b0d1cfdb32b7cb446473b0ef756a100e1798e035b78bea50",
+          "bytes": 1796848117
+        }
+      ],
+      "lastError": "",
+      "blockedReason": "",
+      "unblockHint": "",
+      "verifiedAt": "2026-07-03T23:23:42Z",
+      "notes": "Branch (a) LOCAL SMOKE taken and completed on Apple M4 Pro / 24 GiB via mlx-lm 0.31.3 (mlx 0.31.2). Target: stick default granite-4.0-h-micro (arch granitemoehybrid, LIVE-verified in mlx_lm 0.31.3 wheel + GitHub), QLoRA over official mlx-community/granite-4.0-h-micro-4bit checkpoint (LFS sha256 573654ce... pin-matched, staged via downloads/*.part). Smoke: 15 optimizer steps on 48 real medqa_jp SFT examples, loss 2.055->0.736 (finite, decreasing; val 2.113->1.061), peak mem 9.86 GB, adapter 12 MB saved. Adapter merged via mlx_lm fuse (fused_model/ sha differs from base = real merge); local GGUF export correctly recorded UNSUPPORTED_LOCALLY (mlx_lm exporter lacks granitemoehybrid support, actual traceback logged); working off-site fp16-fuse + llama.cpp convert_hf_to_gguf.py + llama-quantize path in REMOTE_RECIPE.md. 20-item held-out eval in evals/tuned_vs_baseline.md: baseline 7/20 vs tuned 4/20 - explicitly pipeline proof only, no quality bar (15-step adapter cannot move real accuracy). README_TRAINING.md documents the real hospital path (AI Medical Centre / Data Access Review Committee gold set, de-identified-only off-site GPU SFT with r45 recall caveat, re-quantize GGUF, re-pin DECISIONS.json, re-run m7+m9 before ship) + RWKV-7 alternative via native BlinkDL/RWKV-LM trainer. IMPORTANT PIN: transformers==4.57.1 (not mlx-lm's declared >=5.0.0) - transformers 5.13.0 breaks mlx_lm import (AutoTokenizer.register NewlineTokenizer AttributeError); rationale in requirements.txt + TRAINING.json. Verifier re-hashed all artifacts (exact match), re-derived subset/log genuineness, re-ran verify_m12.sh (exit 0, prints BRANCH: (a) LOCAL SMOKE LoRA). DISK NOTE: host at ~5.4 GiB free; training/base_model + training/fused_model ~1.8 GB each kept as merge-proof artifacts - candidates for reclamation if disk pressure blocks a future milestone. New top-level training/ directory (outside usb_stick/, not in MANIFEST.sha256)."
+    }
+  ]
+}

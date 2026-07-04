@@ -1,0 +1,84 @@
+{
+  "schema": "med-usb/datasets/v1",
+  "generatedAt": "2026-07-03T22:38:59Z",
+  "researchMethod": "Live WebSearch/WebFetch/curl against Hugging Face dataset API, dataset READMEs, and source GitHub repos on 2026-07-03. No values taken from model memory; every URL below was resolved live and license text read from the source.",
+  "phiPolicy": "Datasets containing raw PHI are FORBIDDEN. All pinned datasets are exam-derived or machine-translated exam QA with only synthetic/hypothetical patient vignettes (no real patient records). Verified by inspecting sample rows.",
+  "researchCandidates": [
+    {
+      "name": "JMedBench (Coldog2333/JMedBench)",
+      "url": "https://huggingface.co/datasets/Coldog2333/JMedBench",
+      "verdict": "SELECTED as source collection",
+      "note": "Benchmark collection of 20 datasets / 5 tasks for Japanese biomedical LLMs (Aizawa Lab, U-Tokyo/NII; arXiv:2409.13317). Per-subset licenses vary; we pin only license-clean, no-PHI subsets. 1.38 GB total; JSONL per subset with train/validation/test splits."
+    },
+    {
+      "name": "JMMLU medical subsets (via JMedBench jmmlu_medical + upstream nlp-waseda/JMMLU)",
+      "url": "https://github.com/nlp-waseda/JMMLU",
+      "verdict": "SELECTED for EVAL",
+      "note": "Native Japanese MMLU. Medical subjects (professional_medicine, medical_genetics, college_medicine, clinical_knowledge, anatomy, virology, etc.) are under CC-BY-SA-4.0. Commercial use for LM research/evaluation is explicitly permitted upstream. No PHI (academic exam MCQA)."
+    },
+    {
+      "name": "IgakuQA (jungokasai/IgakuQA)",
+      "url": "https://github.com/jungokasai/IgakuQA",
+      "verdict": "REJECTED (license)",
+      "note": "Japanese Medical Licensing Examination QA (2018-2022, MHLW source; arXiv:2303.18027). GitHub repo has NO LICENSE file (API license: null) and JMedBench marks its license as '-' (unresolved). Because local-research redistribution terms cannot be confirmed live, it is NOT pinned. JMMLU-medical (CC-BY-SA-4.0) is used as the license-clean native-JA medical eval instead."
+    },
+    {
+      "name": "medqa_jp (JMedBench, translated MedQA)",
+      "url": "https://huggingface.co/datasets/Coldog2333/JMedBench/tree/main/medqa_jp",
+      "verdict": "SELECTED for SFT",
+      "note": "Japanese machine-translation (gpt-4-0613) of MedQA (jind11/MedQA), MIT-licensed. USMLE-style clinical-vignette QA with 5 options + gold answer. Hypothetical patients only (no real PHI). 10,178 train QA pairs usable as instruction/QA SFT corpus."
+    },
+    {
+      "name": "ApolloCorpus (FreedomIntelligence/ApolloCorpus)",
+      "url": "https://huggingface.co/datasets/FreedomIntelligence/ApolloCorpus",
+      "verdict": "REJECTED (no Japanese)",
+      "note": "Multilingual medical corpus covers English/Chinese/French/Spanish/Arabic/Hindi - no Japanese portion. Not suitable for a Japanese-capable copilot; superseded by medqa_jp for the SFT slot."
+    }
+  ],
+  "datasets": [
+    {
+      "id": "eval-jmmlu-medical",
+      "role": "eval",
+      "title": "JMMLU medical subsets (Japanese medical MCQA)",
+      "source_collection": "Coldog2333/JMedBench",
+      "config_name": "jmmlu_medical",
+      "url": "https://huggingface.co/datasets/Coldog2333/JMedBench/resolve/main/jmmlu_medical/test.jsonl",
+      "dataset_page": "https://huggingface.co/datasets/Coldog2333/JMedBench",
+      "upstream": "https://github.com/nlp-waseda/JMMLU",
+      "license": "CC-BY-SA-4.0",
+      "license_verified_live": "JMedBench README license table lists jmmlu_medical as CC-BY-SA-4.0; upstream nlp-waseda/JMMLU confirms medical subjects are in the CC-BY-SA-4.0 JMMLU folder (the 3 CC-BY-NC-ND subjects are all non-medical: idioms/civics/geography).",
+      "license_caveats": "CC-BY-SA-4.0: attribution required and derivative datasets must be shared alike. Commercial use permitted. Local research use: permitted.",
+      "commercial_use": "permitted (with attribution + share-alike)",
+      "redistribution": "permitted with attribution and share-alike",
+      "format": "JSONL (fields: sample_id, question, options[], answer_idx, n_options, metadata)",
+      "records": 1271,
+      "anonymization": "exam-derived / no PHI (academic multiple-choice medical exam questions; no patient records)",
+      "local_path": "datasets/eval/jmmlu_medical_test.jsonl",
+      "size_bytes": 666071,
+      "sha256": "8274725a2c36c0a371f1950fa8fff83cf6ea0beda4b92e3a0a8d7f6b7aeee3ab",
+      "citation": "Jiang, Huang, Aizawa. JMedBench: A Benchmark for Evaluating Japanese Biomedical Large Language Models. arXiv:2409.13317 (2024). JMMLU: nlp-waseda/JMMLU (CC-BY-SA-4.0)."
+    },
+    {
+      "id": "sft-medqa-jp",
+      "role": "sft",
+      "title": "MedQA (Japanese) clinical-vignette QA for instruction tuning",
+      "source_collection": "Coldog2333/JMedBench",
+      "config_name": "medqa_jp",
+      "url": "https://huggingface.co/datasets/Coldog2333/JMedBench/resolve/main/medqa_jp/train.jsonl",
+      "dataset_page": "https://huggingface.co/datasets/Coldog2333/JMedBench",
+      "upstream": "https://github.com/jind11/MedQA",
+      "license": "MIT",
+      "license_verified_live": "JMedBench README license table lists medqa_jp (and its English source MedQA) as MIT. Translation performed with gpt-4-0613.",
+      "license_caveats": "MIT: permissive - commercial use, modification, redistribution all permitted with copyright/permission notice retained. Note: rows are machine-translated (gpt-4-0613); may contain translation errors - human review advised before clinical deployment. OpenAI-translated text may carry usage-policy considerations for the translated content.",
+      "commercial_use": "permitted",
+      "redistribution": "permitted with notice",
+      "format": "JSONL (fields: sample_id, question, options[], answer_idx, n_options, metadata)",
+      "records": 10178,
+      "anonymization": "exam-derived / synthetic - no PHI (USMLE-style hypothetical patient vignettes; no real patient data)",
+      "local_path": "datasets/sft/medqa_jp_train.jsonl",
+      "size_bytes": 32240913,
+      "sha256": "d93d25cfaaa3a802b608e33fa2bcdd10d4d457e907c21ff26d4b973938aee7e9",
+      "citation": "Jin et al. What Disease does this Patient Have? A Large-scale Open Domain Question Answering Dataset from Medical Exams (MedQA). Applied Sciences 2021. Japanese via JMedBench (arXiv:2409.13317)."
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+# ============================================================================
+# Large build artifacts — NOT committed. They are regenerated from the pinned
+# recipe: run the build scripts (see README) which fetch exact files by URL+sha256
+# from DECISIONS.json / DATASETS.json. Keeping them out keeps the repo small and
+# under GitHub's 100 MB/file limit.
+# ============================================================================
+
+# Engine binaries + GGUF models (fetched by build/*.sh per DECISIONS.json)
+usb_stick/models/
+usb_stick/bin/
+downloads/
+build/cache/
+
+# Open datasets (fetched per DATASETS.json)
+datasets/
+
+# Fine-tuning: the KIT scripts are tracked; weights / venv / outputs are not
+training/base_model/
+training/fused_model/
+training/adapters/
+training/data/
+training/logs/
+training/.venv/
+training/__pycache__/
+
+# Runtime artifacts
+usb_stick/audit/
+audit/*.jsonl
+usb_stick/MANIFEST.sha256
+
+# Binary / model formats anywhere (belt-and-suspenders)
+*.gguf
+*.safetensors
+*.exe
+*.dll
+*.dylib
+*.so
+*.metallib
+
+# Local / personal config (not part of the deliverable)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# OS / editor / Python cruft
+.DS_Store
+._*
+.Spotlight-V100
+.fseventsd
+*.sparseimage
+__pycache__/
+*.pyc

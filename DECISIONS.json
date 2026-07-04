@@ -1,0 +1,68 @@
+{
+  "schema": "med-usb-decisions/v1",
+  "pinnedAt": "2026-07-03T18:58:36Z",
+  "rationale": {
+    "modelTier": "1.5-3.7B non-Transformer tier per iter4-res-r46; RWKV-7 World is multilingual (Japanese-capable) and Apache-2.0; Granite 4.0-h-micro (Mamba-2 hybrid) is the non-Transformer-hybrid fallback with strong instruction following.",
+    "collectionCheck": "shoumenchougou author listing (https://huggingface.co/api/models?author=shoumenchougou&search=rwkv7) contains only G1/G0 reasoning-variant GGUFs (RWKV7-G1a..G1g etc.), no plain World 2.9B; DoD prefers World over G1-reasoning, so Mungert/rwkv7-2.9B-world-GGUF is the primary pin.",
+    "checksumMethod": "Model sha256 values read live from Hugging Face API ?blobs=true LFS oids on 2026-07-03. llama.cpp asset sha256 values read live from the GitHub Releases API 'digest' field for tag b9867."
+  },
+  "models": {
+    "primary": {
+      "name": "RWKV-7 World 2.9B",
+      "architecture": "rwkv7 (non-Transformer, linear attention)",
+      "hfRepo": "Mungert/rwkv7-2.9B-world-GGUF",
+      "ggufFilename": "rwkv7-2.9B-world-q4_k_m.gguf",
+      "quant": "Q4_K_M",
+      "downloadUrl": "https://huggingface.co/Mungert/rwkv7-2.9B-world-GGUF/resolve/main/rwkv7-2.9B-world-q4_k_m.gguf",
+      "sha256": "d80eadb5a5db0689a6e3a6689128670530b30203c44404510f77f553368253e8",
+      "sizeBytes": 1875793440,
+      "license": "apache-2.0",
+      "checksumSource": "https://huggingface.co/api/models/Mungert/rwkv7-2.9B-world-GGUF?blobs=true",
+      "notes": "World (multilingual chat) variant preferred over shoumenchougou G1-reasoning variants per m0 DoD."
+    },
+    "fallback": {
+      "name": "IBM Granite 4.0-h micro",
+      "architecture": "granitehybrid (Mamba-2/Transformer hybrid, non-standard-attention)",
+      "hfRepo": "ibm-granite/granite-4.0-h-micro-GGUF",
+      "ggufFilename": "granite-4.0-h-micro-Q4_K_M.gguf",
+      "quant": "Q4_K_M",
+      "downloadUrl": "https://huggingface.co/ibm-granite/granite-4.0-h-micro-GGUF/resolve/main/granite-4.0-h-micro-Q4_K_M.gguf",
+      "sha256": "bcc78b9b25450101d1ad90d4b9a264e1bac892f534dfb76066f4eec792fdf023",
+      "sizeBytes": 1942564512,
+      "license": "apache-2.0",
+      "checksumSource": "https://huggingface.co/api/models/ibm-granite/granite-4.0-h-micro-GGUF?blobs=true",
+      "notes": "Official IBM GGUF repo."
+    }
+  },
+  "llamaCpp": {
+    "repo": "ggml-org/llama.cpp",
+    "releaseTag": "b9867",
+    "releaseUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/b9867",
+    "checksumSource": "https://api.github.com/repos/ggml-org/llama.cpp/releases/tags/b9867",
+    "checksumNote": "sha256 values are the 'digest' field GitHub publishes per asset in the Releases API, read live 2026-07-03.",
+    "assets": {
+      "win-x64": {
+        "filename": "llama-b9867-bin-win-cpu-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b9867/llama-b9867-bin-win-cpu-x64.zip",
+        "sha256": "f2c64f32c5ce94e3b92bac030860ef3da6ec0e5b25eed3a5dc1d677f1da88547",
+        "sizeBytes": 17486019
+      },
+      "mac-arm64": {
+        "filename": "llama-b9867-bin-macos-arm64.tar.gz",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b9867/llama-b9867-bin-macos-arm64.tar.gz",
+        "sha256": "8614dce043dcf54150185c6568c0fa092f8cfd2944617aac305e70a8ce1027e3",
+        "sizeBytes": 11134835
+      }
+    }
+  },
+  "runtime": {
+    "llamaServerPortRange": "8080-8099",
+    "auditgwUiPortRange": "8180-8199",
+    "bindAddress": "127.0.0.1",
+    "apiShape": {
+      "primary": "/v1/chat/completions",
+      "fallback": "/completion",
+      "note": "UI calls OpenAI-compatible /v1/chat/completions on llama-server; falls back to raw /completion with a hand-built RWKV World prompt template (User:/Assistant:) if the chat template misbehaves for RWKV-7."
+    }
+  }
+}

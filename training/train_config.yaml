@@ -1,0 +1,34 @@
+# mlx-lm LoRA smoke-run config for the stick default model
+# (granite-4.0-h-micro, model_type=granitemoehybrid, 4-bit MLX weights -> QLoRA).
+# Paths are relative to training/ ; run via run_smoke_lora.sh which cd's here.
+# Keys match mlx_lm.lora CONFIG_DEFAULTS (mlx-lm==0.31.3).
+
+model: "base_model"
+train: true
+fine_tune_type: "lora"
+optimizer: "adam"
+data: "data"
+seed: 7
+
+# smoke scale: >= 10 optimizer steps over >= 32 real SFT examples
+iters: 15
+batch_size: 4
+num_layers: 8
+learning_rate: 1.0e-4
+max_seq_length: 1024
+grad_checkpoint: true
+grad_accumulation_steps: 1
+
+steps_per_report: 1
+steps_per_eval: 100
+val_batches: 2
+
+adapter_path: "adapters"
+save_every: 5
+
+lora_parameters:
+  rank: 8
+  dropout: 0.0
+  scale: 20.0
+
+mask_prompt: false
