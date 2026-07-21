@@ -1,0 +1,784 @@
+{
+  "goal": "Assemble an evidence-backed \"accuracy playbook\": determine whether — and precisely how — a ~3B non-Transformer model can be made accurate enough for advisory Japanese clinical-documentation, de-identification, and coding, with concrete techniques, expected quantitative gains, an eval protocol a hospital would accept, and a go/no-go read on the small-model thesis.",
+  "goalStatus": "researching",
+  "iteration": 11,
+  "maxIterations": 14,
+  "confidenceInGoal": "medium",
+  "questions": [
+    {
+      "id": "q1",
+      "priority": 1,
+      "status": "researched",
+      "question": "What accuracy do existing SMALL (1.5B-8B) medical and Japanese-medical LLMs actually achieve on documentation/QA benchmarks (IgakuQA, JMedBench, JMMLU-medical, MedQA-JP)? Is there a measurable quality floor by parameter count, and where does ~3B land?"
+    },
+    {
+      "id": "q2",
+      "priority": 1,
+      "status": "researched",
+      "question": "Quantitatively, how much does domain fine-tuning (SFT / LoRA / QLoRA) lift a small (~3B) base model on Japanese clinical documentation and coding tasks? Best recipes, data volume needed, and realistic accuracy deltas. (Includes: does the small model capture a similar fraction of the +7.7/+17.6pp uplift measured at 7B, or hit a lower ceiling?) [NOTE: deep-research run FAILED with a StructuredOutput retry-cap crash — zero findings returned; re-posed as narrower sub-questions q15/q16.]"
+    },
+    {
+      "id": "q3",
+      "priority": 1,
+      "status": "researched",
+      "question": "Can retrieval-augmented generation (RAG) let a ~3B model match a 70B model on clinical documentation, coding, and guideline-grounded tasks? Evidence of small-model+RAG closing the gap, and best practices for local/offline RAG."
+    },
+    {
+      "id": "q7",
+      "priority": 1,
+      "status": "researched",
+      "question": "What is a rigorous, hospital-acceptable EVAL protocol to PROVE clinical-documentation accuracy of a drafting tool — metrics (factuality, hallucination/omission rate, coding accuracy), gold-set design, human evaluation, non-inferiority framing — and what error rates have peer-reviewed offline/local systems reported?"
+    },
+    {
+      "id": "q11",
+      "priority": 1,
+      "status": "researched",
+      "question": "What does OUR ~3B non-transformer model actually score on IgakuQA/JMedBench/JMMLU-medical out-of-box and after Japanese-medical SFT? Run our own 3B benchmark to replace the 1B-to-7B interpolation — the single highest-value missing datapoint, since no study has ever evaluated ~3B on Japanese-medical benchmarks."
+    },
+    {
+      "id": "q12",
+      "priority": 1,
+      "status": "researched",
+      "question": "On generative documentation (discharge summaries, op-notes, referrals) — which NO source measures at any small size — what accuracy/error rate does a fine-tuned ~3B achieve, and what human-in-loop error budget closes the residual gap? Need a generation eval (factuality/omission/hallucination), not MCQA. [EXTENDED w/ q7 newGap: measure at ENCOUNTER level (not sentence level) with the MedFactEval key-fact gold set + CREOLA/AHRQ 0-7 harm taxonomy on OUR RWKV-7/Mamba 4-bit GGUF on CPU — the single unaddressed make-or-break datapoint no published study provides.]"
+    },
+    {
+      "id": "q13",
+      "priority": 1,
+      "status": "researched",
+      "question": "For ICD/DPC coding (widest small-large gap, 4-bit reasoning loss flagged), can RAG + structured/constrained decoding + verifiers lift a 3B base to an acceptable bar, and what is the quantified contribution of each component in the pipeline? [EXTENDED w/ q7 newGaps: since ALL published coding-accuracy claims were REFUTED (no trustworthy small-model coding number exists), define our OWN DPC gold set + eval protocol with hierarchical/clinical-context weighting AND quantify a CARE-style conformal verifier + distilled de-id NER composed into the offline USB pipeline — fraction of sentences flagged for human review, and throughput/usability cost of the human-in-loop error budget.]"
+    },
+    {
+      "id": "q15",
+      "priority": 1,
+      "status": "researched",
+      "question": "RE-POSE of failed q2 (narrowed, self-contained): Does a ~3B model capture a similar FRACTION of the SFT uplift measured at 7B (+7.7pp IgakuQA / +17.6pp JMMLU-medical, JMedLLM-v1-7B, arXiv 2409.11783v2), or hit a lower ceiling? Find any controlled 1B/3B/7B size-scan that reports SFT delta as a function of parameter count on JP or general medical QA; AND determine whether QLoRA/LoRA (required by our constrained build pipeline) sacrifices any of that domain uplift versus full SFT at ~3B."
+    },
+    {
+      "id": "q16",
+      "priority": 1,
+      "status": "researched",
+      "question": "RE-POSE of failed q2 (narrowed, self-contained): At ~3B, does SFT uplift concentrate on extraction/discriminative tasks versus reasoning/coding tasks (consistent with q1's NCVC-slm-1 finding that fine-tuning closes the extraction gap but not the reasoning gap)? Get SFT deltas split by task type; AND quantify how much labeled Japanese clinical data (SFT-pair count / token volume) is needed to move a ~3B base meaningfully, with the marginal-return curve (1k vs 10k vs 100k examples)."
+    },
+    {
+      "id": "q17",
+      "priority": 1,
+      "status": "researched",
+      "question": "Does the sub-7B 'poor context-utilization / irrelevant generation' RAG failure mode (from q3) hold for RWKV-7 / Mamba-hybrid architectures, or do state-space/linear-attention models condition on retrieved context differently at ~3B? No primary evidence exists on non-transformers, yet this determines whether RAG is even usable in our stack."
+    },
+    {
+      "id": "q19",
+      "priority": 1,
+      "status": "researched",
+      "question": "What pre-registered non-inferiority MARGIN (on encounter-level hallucination rate, omission rate, or AHRQ 0-7 harm score) will Japanese hospital review boards accept for an advisory + human-confirmed drafting tool, given the human baseline is itself ~20% hallucination / 1.82 errors per summary? (q7 established we must pre-register a non-inferiority margin against the imperfect human baseline — the defensible margin value itself remains open.)"
+    },
+    {
+      "id": "q20",
+      "priority": 1,
+      "status": "pending",
+      "question": "Do the English/US gold-set and rubric designs (MedFactEval key-facts, PDSQI-9, modified PDQI-9, CREOLA taxonomy, AHRQ harm grading) transfer validly to Japanese-language discharge summaries/op-notes, and does CARE's conformal coverage guarantee hold under Japanese-hospital distribution shift (exchangeability assumption)? These instruments are English/US-validated; JP-language transfer is untested and could break both the rubrics and the conformal guarantee."
+    },
+    {
+      "id": "q21",
+      "priority": 1,
+      "status": "pending",
+      "question": "RE-POSE of NULL-result q12 (prior run returned placeholder findings + all three substantive claims REFUTED): (a) seek any PRIMARY study reporting ENCOUNTER-LEVEL factuality/omission/hallucination for a sub-4B FINE-TUNED model on clinical free-text generation, and any measured human-in-loop / post-editing error-reduction curve, to anchor an in-house target BEFORE the pilot; AND (b) record that the authoritative datapoint must be produced IN-HOUSE — our RWKV-7/Mamba Q4 GGUF (post-JP-medical-SFT, on CPU) run through the MedFactEval key-fact gold set + CREOLA/AHRQ 0-7 harm taxonomy on JP discharge summaries/op-notes/referrals, reporting hallucination rate, omission rate, and harm-weighted error count vs the ~20%-hallucination / 1.82-errors human baseline, plus the CARE-style sentence flag rate (8-24%) at which post-review harm becomes non-inferior and its throughput/usability cost per note. NOTE: literature cannot deliver (b); the eval INSTRUMENT is already assembled in q7."
+    },
+    {
+      "id": "q22",
+      "priority": 1,
+      "status": "pending",
+      "question": "IN-HOUSE make-or-break (from q13 newGaps 1+2+5): Measure the actual exact-match AND clinical-adjudicated DPC coding accuracy of our fine-tuned ~3B non-transformer (RWKV-7/Mamba) 4-bit GGUF on a Japanese DPC gold set with hierarchical/clinical-context weighting, reporting frequent- vs rare-code accuracy SEPARATELY (micro-F1 frequent vs macro-F1 infrequent) — the single coding number that exists nowhere and cannot be extrapolated (all published figures are English, mostly 7B-70B; the 98.8% clean-pair headline collapses to ~69%/4.18% on real multi-condition notes). Include (a) the DPC code-space structure (14 MDC major categories, diagnosis×procedure×comorbidity trees) and whether a retrieval index over the official DPC tree + grammar constraints reduces the effective decision to a tractable RANKING problem for a 3B; and (b) at a chosen alpha, the fraction of DPC codes/sentences a CARE/RCPS-style conformal verifier flags for human review (section-dependent, 20-100% in analogue domains) and the resulting clinician review-time per document (the concrete human-in-loop error budget that sets coding throughput). Score against a human-adjudicated gold set, never against zero-shot LLM output (GPT-4 vs certified coder: kappa~0.01)."
+    },
+    {
+      "id": "q24",
+      "priority": 1,
+      "status": "pending",
+      "question": "IN-HOUSE RAG go/no-go (consolidates q17 newGaps 1-5; absorbs dropped q14's 4-bit ablation): Measure the actual context-utilization / irrelevant-generation rate of our fine-tuned RWKV-7 2.9B 'Goose' (and a 3B Mamba+attention hybrid) under (a) naive one-pass RAG and (b) chunk-and-summarize (Smooth Reading-style, arXiv:2507.19353) inference on a real Japanese clinical/QA + ICD-DPC set — does the sub-7B transformer NET-NEGATIVE finding (arXiv:2603.11513: 42-100% of known answers destroyed, 73% irrelevant-generation at 3B) REPRODUCE on non-transformers (architectural theory predicts equal-or-worse for fixed-state SSMs: Jelassi 2024, Arora 2024, arXiv:2507.00449), and does chunk-and-summarize (flips a 3B recurrent model -5.68%→+3.61% vs transformers on LongBench) or an attention-injected hybrid flip RAG net-POSITIVE, at what CPU/llama.cpp latency cost? Also ablate 4-bit GGUF vs fp16 recall/context-utilization (UNSTUDIED in every cited source — subsumes q14) AND the reasoning/coding precision path (Q5/Q6/mixed vs Q4). Confirm whether an Apache/GGUF-ready attention-hybrid fallback exists with a Japanese-medical baseline if pure RWKV-7 fails the RAG bar. This GATES whether any clinical feature may depend on retrieval; default hedge is to bake knowledge into weights (SFT/distillation) for the highest-stakes tasks (de-id + DPC coding) rather than trust at-inference retrieval a small recurrent model may ignore."
+    },
+    {
+      "id": "q25",
+      "priority": 1,
+      "status": "pending",
+      "question": "REGULATORY-ACCEPTANCE + POWER (from q19 newGaps 2+3; displaces substantially-answered q23): Will a Japanese hospital ethics board / PMDA accept a FIXED-FRACTION non-inferiority framing for an advisory + human-confirmed drafting tool at all, or do they require an ABSOLUTE-threshold or a formal TOST/equivalence design? Seek any Japanese IRB precedent or advisory-tool regulatory consultation to de-risk the derived margin (q19 established the margin math but found ZERO accepted-margin precedent). AND compute the concrete N (encounters) and reviewer count needed to POWER a TOST equivalence test to the derived ~0.48 AHRQ-point / ~0.9-error margin at the human-baseline variance (SD ~1.94 errors, ~0.98 harm), so the eval protocol is actually runnable. This finalizes the hospital-acceptable eval-protocol deliverable that q19 (margin derivation) and q7 (protocol scaffold) left open; it is a literature/consultation question, distinct from the in-house measurement gate (q21/q22)."
+    }
+  ],
+  "knowledge": [
+    {
+      "id": "q1",
+      "keyFindings": [
+        {
+          "finding": "On the only direct in-domain 3B data point (Qwen2.5 size scan), a 3B model sits at a measured quality floor: MedQA ~40% (vs ~62% at 7B, ~70% at 72B) and biomedical NER F1 ~0.18 (vs ~0.35 at 7B), with a sharp 3B->7B jump that then plateaus.",
+          "confidence": "high",
+          "implication": "Our ~3B base will land near the reasoning-QA floor out-of-the-box; the steep 3B->7B curve means we pay the largest accuracy penalty exactly at 3B, so untuned QA/coding is a non-starter and adaptation is mandatory.",
+          "sources": ["https://arxiv.org/pdf/2509.04534"]
+        },
+        {
+          "finding": "No Japanese-medical benchmark (IgakuQA, JMedBench, JMMLU-medical, MedQA-JP) has ever been evaluated at ~3B; JMedBench explicitly restricted itself to ~7-8B (plus one 13B) for compute reasons, so every ~3B Japanese number is interpolated between a 1B floor and 7-8B results.",
+          "confidence": "high",
+          "implication": "The single most product-relevant number does not exist in the literature. We MUST run our own 3B JP-medical benchmark (out-of-box and post-SFT) to replace the interpolation before any go decision is defensible.",
+          "sources": ["https://arxiv.org/html/2409.13317v1", "https://arxiv.org/pdf/2409.13317"]
+        },
+        {
+          "finding": "Even at 7-8B the out-of-box Japanese medical MCQA ceiling is modest and far below the ~75% pass line: Qwen2-7B scores 41.25% IgakuQA / 44.06% JMMLU-medical / 31.03% MedQA zero-shot (42.58% micro-avg), rising only to ~49-52% few-shot; GPT-4 and 70B JP-tuned models reach ~76-82%.",
+          "confidence": "high",
+          "implication": "Since 3B underperforms 7B, our model lands below a sub-pass ceiling on reasoning QA. Advisory QA/knowledge tasks cannot clear a hospital bar without heavy adaptation; do not market the 3B for open reasoning QA.",
+          "sources": ["https://arxiv.org/html/2409.13317v1", "https://arxiv.org/pdf/2409.13317", "https://arxiv.org/pdf/2412.16423"]
+        },
+        {
+          "finding": "Task type is decisive, not just size: a fine-tuned 1B Japanese clinical model (NCVC-slm-1) beats GPT-4o and 8-9B models on 6/8 discriminative tasks (SMDIS 0.98/0.99 kappa, disease NER 0.90 F1, NER 0.88 F1 -- all de-identification/extraction-adjacent) yet stays near floor on reasoning QA (JMMLU-Med 0.26 vs 0.82; cancer-stage RRTNM 0.42 vs 0.85).",
+          "confidence": "high",
+          "implication": "De-identification, NER, and structured extraction are VIABLE at small size with task-specific fine-tuning -- this de-risks the de-id pillar strongly. The unsolved risk concentrates in reasoning-heavy ICD/DPC coding and open-ended generative documentation.",
+          "sources": ["https://arxiv.org/pdf/2412.16423", "https://arxiv.org/abs/2412.16423"]
+        },
+        {
+          "finding": "Domain SFT gives large quantified gains at 7B and can offset a ~10x parameter gap: JMedLLM-v1-7B reaches 52.3% IgakuQA (+7.7pp) and 50.8% JMMLU-medical (+17.6pp) over base, beating a 70B English-centric model on JP benchmarks (caveat: the 70B had no JP tuning, so the offset is overstated).",
+          "confidence": "high",
+          "implication": "Fine-tuning is our primary gap-closing lever with double-digit gains demonstrated on the exact JP benchmarks -- but validated at 7B, NOT 3B, and it closes the extraction gap more than the reasoning gap. Budget for SFT; treat +17pp as an optimistic upper bound at 3B.",
+          "sources": ["https://arxiv.org/html/2409.11783v2"]
+        },
+        {
+          "finding": "4-bit quantization is a minor accuracy risk for basic/extraction workloads (Llama-3.2-3B q4_k_m loses only 2.4pp MMLU), but small (<13B) models have the least quantization headroom: to keep multi-step reasoning and self-calibration within 2% loss, <13B models need W8 whereas >=13B suffice at W4.",
+          "confidence": "high",
+          "implication": "GGUF 4-bit is fine for de-id/NER/extraction (the pillar that already works), but the ICD/DPC coding and reasoning path may need Q8 weights. Ship a task-stratified quantization strategy: 4-bit for extraction, evaluate 8-bit for the coding/reasoning path.",
+          "sources": ["https://arxiv.org/pdf/2402.18158", "https://arxiv.org/html/2512.06490v1", "https://arxiv.org/html/2402.16775v1"]
+        },
+        {
+          "finding": "The small-vs-large gap widens with task difficulty: ~70B models reduce reasoning errors ~2x more effectively than <=10B models on complex tasks vs only ~1.3x on simple ones; the biomedical size-scan study explicitly recommends running the largest feasible model at 4-bit rather than a smaller full-precision one.",
+          "confidence": "medium",
+          "implication": "The 3B deficit is structurally largest on the hardest documentation/coding reasoning -- exactly where clinical risk concentrates. This argues for compensating scaffolding (RAG, structured/constrained decoding, verifiers, human-in-loop error budgets) rather than relying on the raw 3B, and for keeping the parameter count as high as the USB/CPU budget allows.",
+          "sources": ["https://openreview.net/forum?id=jgVqCCg5XX", "https://arxiv.org/pdf/2509.04534"]
+        },
+        {
+          "finding": "All quantitative evidence is transformer models on GPUs; the product's exact configuration -- non-transformer RWKV-7/Mamba-hybrid ~3B, 4-bit GGUF, CPU llama.cpp -- is completely unvalidated, and quantization studies flagged one 3B model (StableLM-3B) as unexpectedly quant-sensitive, so architecture-specific tolerance may differ.",
+          "confidence": "high",
+          "implication": "Every headline number carries an architecture-transfer risk. The non-transformer 3B + GGUF + CPU stack must be self-benchmarked; do not assume RWKV/Mamba quantization headroom matches the transformer evidence.",
+          "sources": ["https://arxiv.org/pdf/2402.18158", "https://arxiv.org/pdf/2509.04534"]
+        }
+      ],
+      "sources": [
+        "https://arxiv.org/pdf/2509.04534",
+        "https://arxiv.org/html/2409.13317v1",
+        "https://arxiv.org/pdf/2409.13317",
+        "https://arxiv.org/pdf/2412.16423",
+        "https://arxiv.org/abs/2412.16423",
+        "https://arxiv.org/html/2409.11783v2",
+        "https://arxiv.org/pdf/2402.18158",
+        "https://arxiv.org/html/2512.06490v1",
+        "https://arxiv.org/html/2402.16775v1",
+        "https://openreview.net/forum?id=jgVqCCg5XX"
+      ]
+    },
+    {
+      "id": "q2",
+      "keyFindings": [
+        {
+          "finding": "NULL RESULT — no evidence gathered. The deep-research dispatch for q2 crashed (TelemetrySafeError: StructuredOutput retry cap exceeded, 5 failed calls) and returned zero findings and zero sources. This is a harness failure, not a negative finding: nothing was learned in either direction about 3B fine-tuning uplift.",
+          "confidence": "high",
+          "implication": "q2's central question — whether ~3B captures a similar fraction of the 7B SFT uplift (+7.7pp IgakuQA / +17.6pp JMMLU-medical, JMedLLM-v1-7B, arXiv 2409.11783v2) or hits a lower ceiling — remains UNMEASURED in the literature and by us. Re-posed as narrower self-contained sub-questions q15 (uplift-fraction / size-scan / QLoRA-vs-full) and q16 (uplift-by-task-type / data-volume curve) to avoid the schema-retry crash. Treat our own planned 3B SFT benchmark (q11/q12) as the authoritative source since no published study reports SFT delta as a function of parameter count on JP-medical tasks.",
+          "sources": []
+        }
+      ],
+      "sources": []
+    },
+    {
+      "id": "q3",
+      "keyFindings": [
+        {
+          "finding": "Standard-prompting RAG is net-negative for a 3B model on extractive QA (-1.9pp EM), and even with ORACLE retrieval a 3B reaches only 12.8% EM on unknown questions — the bottleneck is context utilization, which the authors argue needs substantially more than 7B params.",
+          "confidence": "medium",
+          "implication": "RAG bolted onto our untuned ~3B will NOT rescue accuracy and may hurt it; retrieval quality is not the limiting factor, so a retrieval-first strategy is the wrong primary bet for the product.",
+          "sources": ["https://arxiv.org/pdf/2603.11513"]
+        },
+        {
+          "finding": "The dominant sub-7B RAG failure mode is 'irrelevant generation' — the model ignores the retrieved passage (73% of failures at 3B). Better retrieval (embeddings, hybrid, re-ranking) closes at most half the gap; the other half requires model-side conditioning (RAG-aware training).",
+          "confidence": "medium",
+          "implication": "Any RAG we ship must be paired with RAG-aware fine-tuning (RAFT/Self-RAG style), not just a good retriever — otherwise the 3B won't condition on the ICD/DPC guideline text we retrieve.",
+          "sources": ["https://arxiv.org/pdf/2603.11513"]
+        },
+        {
+          "finding": "At 4B on medical MCQA, domain fine-tuning beat RAG decisively: MedGemma-4B +6.8pp over base Gemma-3-4B (p<1e-4), while RAG gave no significant gain; the best non-domain+RAG setup (47.3%) never caught the worst domain setup (51.4%). Both 4-bit GGUF.",
+          "confidence": "medium",
+          "implication": "Prioritize domain-adapted WEIGHTS (fine-tuning/distillation) over RAG as the primary accuracy lever for our quantized local model; RAG is a complement, not a substitute for in-weights knowledge.",
+          "sources": ["https://arxiv.org/pdf/2604.23801"]
+        },
+        {
+          "finding": "Peer-reviewed clinical-documentation work identifies 7-12B (Llama-3.1-8B, Mistral-7B, NeMo-12B) as the optimal band for ICD-10 coding / tumor-documentation extraction; models under 7B were notably worse and scaling to 70B added nothing — the gap saturates below 70B but ~3B sits below the effective threshold.",
+          "confidence": "high",
+          "implication": "Directly contradicts an out-of-the-box ~3B thesis for coding/documentation. A ~3B can only be viable with aggressive domain adaptation to lift it toward the 7-12B envelope; untuned it will underperform.",
+          "sources": ["https://arxiv.org/pdf/2501.12106"]
+        },
+        {
+          "finding": "De-identification is achievable on tiny offline models via distillation: a 184M DeBERTa-v3 distilled from a cloud teacher hit micro span-level 0.89 precision / 0.88 recall on CPU, within ~0.09 recall of its cloud teacher.",
+          "confidence": "high",
+          "implication": "The de-id task is the most tractable pillar — a distilled sub-1B encoder can run on the USB stick at deployable accuracy. Consider a dedicated distilled NER de-id component rather than relying on the generative 3B for PHI removal.",
+          "sources": ["https://arxiv.org/pdf/2605.03301"]
+        },
+        {
+          "finding": "For ICD-10 coding, fine-tuned 1-3B models hit ~98.8% on constrained description→code lookup but only ~69% exact-match on real MIMIC-IV discharge summaries (87% category-match); size still matters (8B 78% > 3B 68% > 1B 36% on a hard reordered condition), but better fine-tuning largely closes it (1B 36%→87.5%).",
+          "confidence": "high",
+          "implication": "Free-text coding at 3B is only partially accurate and mandates expert human review (human-in-loop error budget). The size disadvantage is substantially closable with better fine-tuning, which is encouraging for the 3B thesis IF we invest in FT quality.",
+          "sources": ["https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12045799/"]
+        },
+        {
+          "finding": "RAG gives large medical-QA gains across tiers (LLaMA2-70B +8pp, GPT-3.5 +11pp) but never lets a small/older model equal a current top model, and gains shrink as baseline capability rises; a systematic review of 70 studies contains ZERO ~3B data points.",
+          "confidence": "high",
+          "implication": "RAG's value is real but it is not a great equalizer — it will not let our 3B match a 70B. Set expectations accordingly and treat RAG as incremental, not transformative.",
+          "sources": ["https://pmc.ncbi.nlm.nih.gov/articles/PMC12157099/"]
+        },
+        {
+          "finding": "On a guideline-grounded consultation task, RAG lifted a LOCAL Llama-3.2-11B from expert-rank 4.80→3.54, closing ~79% of the gap to cloud GPT-4o-mini (accuracy 14.2→21.5/25, safety 11.8→18.7/20).",
+          "confidence": "high",
+          "implication": "For guideline-grounded advisory use, RAG on a capable local model closes most of the cloud gap — but the demonstrated model is 11B transformer, so this is aspirational (not validated) for our 3B non-transformer.",
+          "sources": ["https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12223273/"]
+        },
+        {
+          "finding": "Structured knowledge (knowledge graph + code-specific guideline summaries) beats raw-text retrieval for medical coding: training-free RAG-Coding improved micro-F1 by 3-13% across five LLM backbones on MDACE.",
+          "confidence": "medium",
+          "implication": "Best-practice for our coding pipeline: encode ICD-10/DPC rules as a KG + distilled guideline summaries rather than dumping raw text — but this was shown on large backbones, so its benefit at 3B is unverified.",
+          "sources": ["https://arxiv.org/abs/2605.27377"]
+        },
+        {
+          "finding": "A fine-tuned 7B + self-evaluation/refinement loop produced discharge summaries rated 94% clinically acceptable after minor human verification, ~6% minor factual inconsistency, ZERO critical misinformation; one refinement iteration raised BERTScore 0.893→0.923.",
+          "confidence": "medium",
+          "implication": "Verifier / self-refinement loops plus human-in-loop are a concrete quality lever and give a plausible error-budget target (~6% minor / 0% critical) — though demonstrated at 7B on Chinese, not 3B Japanese.",
+          "sources": ["https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12891688/"]
+        },
+        {
+          "finding": "Small rerankers are viable for the offline pipeline: monoT5 (220M) nearly matched a 7B reranker (21.62 vs 22.08 MRR@1) at ~18x speed on CPU-friendly hardware.",
+          "confidence": "high",
+          "implication": "We can include a strong 220M reranker on the USB stick cheaply — the retrieval half of RAG is not the constraint; the constraint remains the 3B's ability to use retrieved text.",
+          "sources": ["https://arxiv.org/pdf/2407.01219"]
+        }
+      ],
+      "sources": [
+        "https://arxiv.org/pdf/2603.11513",
+        "https://arxiv.org/pdf/2604.23801",
+        "https://arxiv.org/pdf/2501.12106",
+        "https://arxiv.org/pdf/2605.03301",
+        "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12045799/",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC12157099/",
+        "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12223273/",
+        "https://arxiv.org/abs/2605.27377",
+        "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12891688/",
+        "https://arxiv.org/pdf/2407.01219"
+      ]
+    },
+    {
+      "id": "q7",
+      "keyFindings": [
+        {
+          "finding": "A hospital-acceptable factuality gold-set can be built as clinician-defined high-salience 'key facts' validated by a 7-physician majority vote, with hallucination/omission scored as key-fact contradiction/absence and verified by a multi-LLM 'jury' majority vote (MedFactEval/MedAgentBrief). Detected 10-25% contradiction rates across systems.",
+          "confidence": "high",
+          "implication": "Gives us a concrete, defensible gold-set + auto-scoring design we can reuse for our JP discharge-summary/op-note eval; the LLM-jury proxy lets us scale factuality QA without a physician on every note. Caveat: preprint; the jury-vs-single-expert non-inferiority claim did NOT survive verification, so we must keep humans in the loop, not treat the jury as a full expert substitute.",
+          "sources": ["https://arxiv.org/pdf/2509.05878"]
+        },
+        {
+          "finding": "A reusable dual human-eval instrument is established: a 1-7 Likert on four dimensions (quality, readability/conciseness, factuality, completeness) PLUS a separate per-error safety log with four axes (description, error type, likelihood of harm, extent of harm). Validated instruments (PDSQI-9: Cronbach a=0.879, ICC=0.867, >80% power; modified PDQI-9 + binary hallucination flag, blinded dual board-certified raters, RWG interrater reliability) exist as off-the-shelf templates.",
+          "confidence": "high",
+          "implication": "We can adopt PDSQI-9 / modified-PDQI-9 + a fabrication/omission harm log verbatim as our human-eval protocol rather than inventing one — this is what raises hospital-review-board acceptance. Caveat: these are subjective quality instruments, NOT automated factuality/coding/de-id metrics, and are English/US-validated; JP-language transfer is untested.",
+          "sources": ["https://www.medrxiv.org/content/10.1101/2025.04.03.25325204.full.pdf", "https://academic.oup.com/jamia/article-abstract/32/6/1050/8125016", "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12586549/"]
+        },
+        {
+          "finding": "The correct statistical frame is a PRE-REGISTERED non-inferiority test against physician-written notes with a pre-specified margin on hallucination/omission rate or harm score — NOT a superiority test. The one cited 'non-inferiority' study (Osborne, GPT-4o) was actually a one-sided superiority test (failing to reject null does not prove equivalence).",
+          "confidence": "high",
+          "implication": "Our protocol must pre-specify a non-inferiority margin against a human baseline; a non-significant superiority result is not acceptable proof. This is a design correction we must bake in before any hospital pilot. The defensible margin value itself remains an open question (newGap q19).",
+          "sources": ["https://www.medrxiv.org/content/10.1101/2025.04.03.25325204.full.pdf"]
+        },
+        {
+          "finding": "A device-style transferable protocol scaffold exists: CREOLA's four components (hallucination/omission error taxonomy; iterative comparison structure; regulatory device-derived clinical harm framework; annotation GUI) plus Williams/UCSF's blinded-duplicate design (22 attending physicians, 100 encounters, dual evaluation, three error types, AHRQ-adapted 0-7 harm scoring).",
+          "confidence": "high",
+          "implication": "Directly reusable end-to-end validation blueprint for our hospital study: taxonomy + blinded dual-rater + AHRQ harm grading. The device-regulatory harm framing aligns with our advisory/non-device positioning and Japanese review-board expectations.",
+          "sources": ["https://www.nature.com/articles/s41746-025-01670-7", "https://pubmed.ncbi.nlm.nih.gov/40323616/"]
+        },
+        {
+          "finding": "Published error rates split into two non-comparable regimes: controlled sentence-level GPT-4 note generation gives ~1.47% hallucination / ~3.45% omission (12,999 sentences; 44% of hallucinations 'major'), but open-ended ENCOUNTER-level evaluation rises to 42% of summaries with a hallucination and 47% omitting clinically-relevant content. A commercial ambient scribe hallucinated in 31% of notes vs a 20% human baseline (p=0.01).",
+          "confidence": "high",
+          "implication": "Sets the target scoreboard and a usable ~20% human hallucination baseline for our non-inferiority margin. Critical: we must report encounter-level (not sentence-level) rates — the 1.5%/3.5% figures are 20-30x more flattering and must not be quoted as our bar. 'Error-free' is not the standard; matching/beating the imperfect human baseline is.",
+          "sources": ["https://www.nature.com/articles/s41746-025-01670-7", "https://arxiv.org/pdf/2606.08969", "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12586549/", "https://pubmed.ncbi.nlm.nih.gov/40323616/"]
+        },
+        {
+          "finding": "Even frontier (GPT-4-class) LLM discharge summaries make MORE errors than physicians (2.91 vs 1.82 errors/summary, p<0.001) and higher overall narrative harmfulness (0.84 vs 0.36, p<0.001), despite equivalent per-error harm (1.35 vs 1.34).",
+          "confidence": "high",
+          "implication": "This is an UPPER bound: a ~3B model will plausibly do worse than a model that already loses to physicians on error count. It hardens the case that human-in-loop confirmation is mandatory (which our advisory design already assumes) and that the go-decision rests on a human-baseline error budget, not on beating humans.",
+          "sources": ["https://pubmed.ncbi.nlm.nih.gov/40323616/"]
+        },
+        {
+          "finding": "Strongest direct small-model signal: the smallest open model tested, Phi-3 (3.8B), was the WORST of seven open LLMs on hallucination counts (150 unsupported-fact + 111 contradicted-fact over 100 MIMIC-IV discharge summaries). Size did not monotonically predict quality (7B Qwen2.5 led reason extraction at 83.33%); follow-up/discharge-recommendation extraction was hardest for all (29-55% coverage).",
+          "confidence": "high",
+          "implication": "The closest-to-our-scale evidence flags real risk: a ~3.8B transformer was worst on hallucinations. BUT confounded by verbosity (1695 vs 1000-char cap), it is a transformer not our RWKV-7/Mamba, n=100, GPT-4 auto-judge. It is a warning, not a verdict on a 3B non-transformer — reinforcing that we MUST run our own 3B benchmark.",
+          "sources": ["https://arxiv.org/pdf/2504.19061"]
+        },
+        {
+          "finding": "Capability, not just size, gates de-identification: GPT-3.5 collapsed to F1 0.3905 / recall 0.669 (missed ~33% of PHI) vs GPT-4 F1 0.8973 on the same task. Recall (leakage) is the binding constraint.",
+          "confidence": "medium",
+          "implication": "A lower-capability model can fall far below any acceptable de-id bar out-of-the-box, and RECALL/leakage is what a Japanese hospital will gate on. Read-across to 3B is extrapolation by analogy (both models are huge), but it argues for a dedicated distilled de-id NER component (per q3 findings) rather than relying on the generative 3B. Note: the GPT-4 recall-ceiling claim itself did NOT survive verification.",
+          "sources": ["https://www.nature.com/articles/s41598-025-86890-3"]
+        },
+        {
+          "finding": "A post-hoc conformal safety layer (CARE) gives finite-sample, distribution-free hallucination-risk control at target alpha=0.15 without retraining: empirically holds violation rates at 5.7-12.8% while flagging 8-24% of sentences and capturing 83-95% of oracle-labeled hallucinations across five datasets.",
+          "confidence": "medium",
+          "implication": "This is a concrete gap-closing verifier for our advisory + human-confirmed product: route the flagged 8-24% of sentences to mandatory human review with a statistical coverage guarantee, bounding residual hallucination risk REGARDLESS of the weak base model. High strategic value for a 3B thesis. Caveats: preprint; guarantee assumes exchangeability/in-distribution, so Japanese-hospital distribution shift could break coverage; needs a hallucination-scoring function.",
+          "sources": ["https://arxiv.org/pdf/2606.08969"]
+        },
+        {
+          "finding": "ICD/DPC coding accuracy for any small model remains UNEVIDENCED: the coding claims (43.3% best-model clinical precision, 0-4.8% exact match, 3.85-10.90% real-world collapse, hierarchical rank-weighted scoring) all FAILED verification and were refuted.",
+          "confidence": "high",
+          "implication": "Coding is the weakest, hardest, and least-evidenced capability — we have NO trustworthy quantitative anchor for it. The eval protocol for coding must be treated as unproven; we should measure it ourselves and set conservative expectations. This is the largest residual hole in the accuracy playbook.",
+          "sources": ["https://www.medrxiv.org/content/10.1101/2025.10.30.25339130v1.full"]
+        }
+      ],
+      "sources": [
+        "https://arxiv.org/pdf/2509.05878",
+        "https://www.medrxiv.org/content/10.1101/2025.04.03.25325204.full.pdf",
+        "https://academic.oup.com/jamia/article-abstract/32/6/1050/8125016",
+        "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12586549/",
+        "https://www.nature.com/articles/s41746-025-01670-7",
+        "https://pubmed.ncbi.nlm.nih.gov/40323616/",
+        "https://arxiv.org/pdf/2606.08969",
+        "https://arxiv.org/pdf/2504.19061",
+        "https://www.nature.com/articles/s41598-025-86890-3",
+        "https://www.medrxiv.org/content/10.1101/2025.10.30.25339130v1.full"
+      ]
+    },
+    {
+      "id": "q11",
+      "keyFindings": [
+        {
+          "finding": "No published study has ever benchmarked a ~3B model (transformer OR non-transformer) on IgakuQA/JMedBench/JMMLU-medical; the literature floor is a 1B purpose-built Japanese clinical LM (NCVC-slm-1) and the working band is 7-8B and 70B. Our product's exact target size has ZERO direct benchmark evidence and remains interpolated.",
+          "confidence": "high",
+          "implication": "The single highest-value datapoint (our own RWKV-7 2.9B / Mamba-hybrid GGUF-Q4 score) still does not exist and must be generated in-house; the go/no-go on the knowledge-QA thesis cannot be closed by literature alone.",
+          "sources": ["https://arxiv.org/html/2409.13317v1", "https://arxiv.org/pdf/2406.14882", "https://aclanthology.org/2025.coling-main.395.pdf", "https://arxiv.org/abs/2412.16423"]
+        },
+        {
+          "finding": "The nearest architectural proxy, RWKV-7 'Goose' 2.9B (non-transformer), scores 55.0 on 5-shot MMLU — 10.7 pts below Qwen2.5-3B (65.7) and level with Llama3.2-3B (56.5) — but this is general ENGLISH knowledge, carrying no Japanese or medical signal.",
+          "confidence": "high",
+          "implication": "A ~3B non-transformer plausibly trails top 3B transformers by ~10 pts on knowledge-recall tasks; sets a realistic (non-Japanese) ceiling expectation and argues the product should NOT assume transformer-3B parity on factual clinical coding.",
+          "sources": ["https://arxiv.org/pdf/2503.14456"]
+        },
+        {
+          "finding": "Pure SSM/non-transformer models specifically lag transformers on copying and in-context-learning tasks (5-shot MMLU is a named ~15-pt failure mode at 8B same-data), but an 8B Mamba-2-Hybrid with a minority of attention layers BEATS the same-size transformer by +2.65 pts avg across 12 tasks.",
+          "confidence": "high",
+          "implication": "Architecturally favors the product's Mamba-HYBRID option over a pure SSM/RWKV; a hybrid with even a few attention layers is the recommended build to protect the factual-recall regime clinical coding depends on.",
+          "sources": ["https://arxiv.org/pdf/2406.07887"]
+        },
+        {
+          "finding": "Small models fail Japanese medical MCQA out-of-box: 1B scores near-random (~15-23%) on IgakuQA; the best out-of-box 7B (Qwen2-7B) reaches only 41.25% zero-shot / 51.75% few-shot on IgakuQA and 44.06/51.61 on JMMLU-medical — vs GPT-4 at 76.6-79.6% and 70B medical models at 78.6-81.6% (a 50+ pt small-vs-large gap).",
+          "confidence": "high",
+          "implication": "Knowledge-heavy tasks (ICD/DPC coding, licensing-style QA) are NOT viable at ~3B out-of-box; the ~70% acceptance line is unreachable by scale alone at our size — these tasks must be offloaded to RAG/verifiers/human-in-loop, not left to model recall.",
+          "sources": ["https://arxiv.org/abs/2412.16423", "https://aclanthology.org/2025.coling-main.395.pdf", "https://arxiv.org/html/2409.13317v1"]
+        },
+        {
+          "finding": "Japanese-medical SFT yields real but BOUNDED knowledge-QA gains that never reach passing on small/mid models: +6.65 pts on an 8B (55.75%->62.40%), +13.9% avg / up to +20.4 pts (MedQA) and +17.6 pts (JMMLU) on a 7B, and +0.339 on a 70B base — yet best domain-adapted open models still cap ~52% on IgakuQA.",
+          "confidence": "high",
+          "implication": "Even generous SFT transfer would leave a ~3B model well below passing on knowledge MCQA; budget SFT as a 10-20 pt lever for extraction/format tasks, not as the mechanism that clears the coding accuracy bar. (Note: the +6.65 8B figure is a self-reported model card, not peer-reviewed.)",
+          "sources": ["https://huggingface.co/IngentaAITeam/MedExamDoc-Llama-3.1-Swallow-8B-Instruct-v0.5", "https://arxiv.org/html/2409.11783v2", "https://arxiv.org/pdf/2406.14882"]
+        },
+        {
+          "finding": "After SFT, a 1B model BEAT GPT-4o on 6 of 8 structured/classification/NER tasks (JMED-LLM: e.g. SMDIS 0.98/0.99 vs 0.76/0.88; NRNER F1 0.88 vs 0.39) while still failing knowledge MCQA (JMMLU-Med 0.19/0.39). Clean separation: extraction/structured tasks tractable at small scale; knowledge inference not.",
+          "confidence": "high",
+          "implication": "STRONGEST positive signal for the product: de-identification, structured extraction, and template-filling (discharge-summary/op-note formatting) are highly tractable at ~3B and may exceed frontier models after SFT — the product should anchor its value proposition on format-bound tasks and decouple them from knowledge-recall tasks.",
+          "sources": ["https://arxiv.org/abs/2412.16423"]
+        },
+        {
+          "finding": "Naive domain adaptation can REGRESS a small model: English-biomedical Meditron-7B scored BELOW its Llama2 base on IgakuQA (21.94% vs 22.69%) via catastrophic forgetting, and a LLaMA-3.2-3B QLoRA (rank 16, 2 epochs) on a medical-CoT set produced ZERO ROUGE-L movement (0.3052 -> 0.3052).",
+          "confidence": "high",
+          "implication": "SFT is not free upside — the recipe (Japanese/English data balance, epochs, replay to prevent forgetting) is decisive and the only direct 3B fine-tuning datapoint showed a flat metric. Requires a controlled SFT protocol with held-out eval to guarantee a positive delta before shipping.",
+          "sources": ["https://aclanthology.org/2025.coling-main.395.pdf", "https://arxiv.org/html/2510.05003v1"]
+        },
+        {
+          "finding": "4-bit quantization degrades SMALL models disproportionately: 8-bit beats 4-bit across 12/13 benchmarks for Llama-3.1-8B while the gap is minimal at 70B; Qwen2.5-0.5B loses ~40% relative accuracy at 4-bit vs near-zero at 32B.",
+          "confidence": "high",
+          "implication": "The product's Q4 GGUF ~3B target cannot inherit the accuracy of prior 8B/70B sovereign validations; recommend evaluating Q5/Q6 or per-layer mixed precision for the 3B build and treating Q4 as a measured (not assumed) tradeoff. SSMs may quantize differently than the measured transformers — needs direct test.",
+          "sources": ["https://arxiv.org/html/2409.11055v1"]
+        },
+        {
+          "finding": "Two independent effects (pure-SSM weakness on knowledge recall + disproportionate small-model 4-bit degradation) both push a Q4 3B non-transformer BELOW a naive 1B-to-7B linear interpolation on knowledge tasks, while the structured/NER evidence pushes ABOVE it for extraction tasks.",
+          "confidence": "high",
+          "implication": "A single blended '3B accuracy' number is misleading and should be banned from the playbook; report and gate on TWO separate tracks — knowledge-recall (pessimistic, RAG-dependent) and structured-extraction (optimistic, SFT-dependent).",
+          "sources": ["https://arxiv.org/pdf/2503.14456", "https://arxiv.org/pdf/2406.07887", "https://arxiv.org/html/2409.11055v1", "https://arxiv.org/abs/2412.16423"]
+        }
+      ],
+      "sources": [
+        "https://arxiv.org/html/2409.13317v1",
+        "https://arxiv.org/pdf/2406.14882",
+        "https://aclanthology.org/2025.coling-main.395.pdf",
+        "https://arxiv.org/abs/2412.16423",
+        "https://arxiv.org/pdf/2503.14456",
+        "https://arxiv.org/pdf/2406.07887",
+        "https://huggingface.co/IngentaAITeam/MedExamDoc-Llama-3.1-Swallow-8B-Instruct-v0.5",
+        "https://arxiv.org/html/2409.11783v2",
+        "https://arxiv.org/html/2409.11055v1",
+        "https://arxiv.org/html/2510.05003v1"
+      ]
+    },
+    {
+      "id": "q12",
+      "keyFindings": [
+        {
+          "finding": "NULL RESULT — the q12 deep-research run returned a DEGENERATE output: the findings array was placeholder test data ('test claim'/'test summary'/'test evidence'), stats.afterSynthesis=1 was that placeholder, and all three substantive claims were REFUTED in verification (votes 0-3, 0-3, 1-2). No confirmed encounter-level generation datapoint for a ~3B model was produced. This is a harness/synthesis failure analogous to the q2 crash — nothing was learned in either direction.",
+          "confidence": "high",
+          "implication": "q12's make-or-break question — encounter-level factuality/omission/hallucination of a fine-tuned ~3B (RWKV-7/Mamba 4-bit, CPU) and the human-in-loop error budget that closes the residual gap — remains UNMEASURED, exactly as q7/q11 concluded. Re-posed as q21; the authoritative datapoint must be generated in-house.",
+          "sources": []
+        },
+        {
+          "finding": "The refuted 'small models suffer disproportionate 4-bit degradation' claim (Qwen3-4B 91.1%->85.3%, Gemma-3-4B 72.6%->66.9% vs 30B/70B holding) was killed here on unverifiable sourcing (arxiv 2603.26434), but the SAME conclusion is already independently CONFIRMED in the playbook via q1/q11 (arxiv 2409.11055: 8-bit beats 4-bit on 12/13 benchmarks at 8B; 0.5B loses ~40% relative at Q4).",
+          "confidence": "high",
+          "implication": "The quantization-hits-small-models-harder finding stays in the playbook on its prior VERIFIED sourcing; this run neither strengthens nor weakens it. Do NOT treat the q12 refutation as evidence against the effect — it is a sourcing failure, not a substantive reversal. Q4 for the reasoning/coding path remains a measured risk.",
+          "sources": ["https://arxiv.org/html/2409.11055v1"]
+        },
+        {
+          "finding": "The refuted '~3B at 4-bit = 92.09% package-hallucination rate' claim was drawn from Stack Overflow CODE-PACKAGE generation (arxiv 2512.08213), an out-of-domain exact-string task with no valid transfer to clinical free-text; verifiers correctly killed it (0-3).",
+          "confidence": "high",
+          "implication": "Reinforces discipline: exact-string/code hallucination rates are NOT a proxy for clinical documentation factuality and must not be quoted in the hospital eval. Our factuality bar must be measured on the MedFactEval key-fact / AHRQ-harm instruments (from q7), not borrowed from unrelated code benchmarks.",
+          "sources": []
+        },
+        {
+          "finding": "The refuted CREOLA claim (encounter-level clinical-safety framework with a device-style Catastrophic-to-Minor harm scale) was killed only because it was sourced to a vendor blog (tortus.ai) and duplicates material already CONFIRMED in q7 from the primary npj Digital Medicine paper (s41746-025-01670-7).",
+          "confidence": "high",
+          "implication": "No loss: the CREOLA encounter-level + AHRQ 0-7 harm taxonomy blueprint the q12 extension called for is already established and adopted in the playbook via q7's primary source. The eval instrument is in hand; what is missing is running OUR model through it.",
+          "sources": ["https://www.nature.com/articles/s41746-025-01670-7"]
+        }
+      ],
+      "sources": [
+        "https://arxiv.org/html/2409.11055v1",
+        "https://www.nature.com/articles/s41746-025-01670-7"
+      ]
+    },
+    {
+      "id": "q13",
+      "keyFindings": [
+        {
+          "finding": "Zero-shot LLM ICD coding is unacceptable at ANY model size: GPT-4 (best of 6 frontier models, smallest tested 70B) agreed with a certified coder on only 15.2% of codes (26.4% at category level), Cohen's kappa ~0.01 (chance) vs a human inter-coder kappa of 0.86 over 165 codes from 50 inpatient notes.",
+          "confidence": "high",
+          "implication": "The coding pipeline must be scored against a human-adjudicated DPC gold set, never against zero-shot LLM output or as an autonomous coder. Advisory + human-confirmed is the only defensible design, and 'no trustworthy small-model coding number exists' is an argument-from-absence (nothing under 70B was tested), so we must generate our own 3B number.",
+          "sources": ["https://www.medrxiv.org/content/10.1101/2024.04.29.24306573.full.pdf"]
+        },
+        {
+          "finding": "Fine-tuning is the single largest lever but only on clean inputs: a fine-tuned Llama-3.2-3B reached 98.83% exact-match ICD-10 (from 0.13% base) on standardized code-description pairs, with 1B/3B/8B all converging to ~98.8% (size irrelevant on clean pairs) — BUT the same 3B collapses to 4.18% on multiple concurrent conditions, 67.92% on reordered expressions, and ~69% top-1 / ~87% category on real MIMIC-IV discharge notes, where size DOES matter (sentence integration 49.48% at 1B vs 87.99% at 8B).",
+          "confidence": "high",
+          "implication": "SFT is mandatory and transformative but NOT sufficient for real multi-condition Japanese discharge notes at 3B. The 98.8% headline is a clean-input ceiling and must never be quoted as real-note capability; expect a large drop on messy encounters and budget RAG + verifiers + HITL to cover it.",
+          "sources": ["https://www.nature.com/articles/s44401-025-00018-3"]
+        },
+        {
+          "finding": "RAG gives large RELATIVE but low ABSOLUTE exact-match gains on small models: over a >1M-visit ED database, RAG lifted Qwen-2-7B 0.8%->17.6% and Gemma-2-9b-it 7.2%->26.4% vs provider codes — 26.4% was the small-model ceiling. The same study's LARGE models (GPT-4/Llama-3.1-70B) were judged by physicians to OUTPERFORM provider coders, and the authors reject exact-match-vs-provider as a valid metric.",
+          "confidence": "high",
+          "implication": "RAG alone cannot get a 3B base to acceptable exact-match ICD/DPC accuracy — it is a necessary component, not a solution. And exact-match-vs-provider is contested (provider codes are themselves unreliable), so the DPC gold set needs a clinical-adjudicated correctness/specificity axis alongside exact-match, with hierarchical weighting.",
+          "sources": ["https://www.medrxiv.org/content/10.1101/2024.10.15.24315526.full.pdf"]
+        },
+        {
+          "finding": "Grammar/structured constrained decoding is a large secondary lever for schema validity: on a 223M Flan-T5 doing schema-bound PICO slot-filling it lifted F1 by 0.35-0.43 absolute (glaucoma 0.045->0.47), but the delta is inflated by a near-zero unconstrained baseline and constrained absolute F1 (0.29-0.47) is still below any clinical bar. The claim that it 'eliminates post-hoc validation' was refuted 0-3 — it guarantees schema validity, not semantic correctness.",
+          "confidence": "high",
+          "implication": "Use grammar-constrained decoding to guarantee valid DPC/ICD code structure and eliminate malformed output (especially valuable for a tiny model that otherwise can't emit schema-valid text), but keep a post-hoc semantic verifier — constraints do not make the code clinically correct.",
+          "sources": ["https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2024.1406857/full"]
+        },
+        {
+          "finding": "Conformal verifiers (CARE / RCPS-style) give distribution-free, finite-sample risk guarantees bounding missed/incorrect outputs at a tunable alpha, and measurably improve reviewers (+28.6pp omission detection, 50.4%->79.0%, with ~5% less review time/sentence in a preliminary n=3 clinician study), but they do NOT raise underlying model accuracy.",
+          "confidence": "high",
+          "implication": "Adopt a conformal verifier as the residual-risk bound and reviewer aid for the advisory design — it converts an imperfect 3B into a statistically-bounded system without retraining. But it is a safety/surfacing layer, not an accuracy lever; the base model must still be lifted by SFT+RAG+constraints. Evidence is 2026 preprints, small-n, and in adjacent domains (summarization/NER, not DPC) — relevance is extrapolated.",
+          "sources": ["https://arxiv.org/abs/2606.08969", "https://arxiv.org/html/2603.00924"]
+        },
+        {
+          "finding": "The verifier's human-in-loop cost is severe and highly section-dependent: to honor alpha the conformal layer forces large review fractions — FDA-label sections needed 41-100% rejection (Contraindications 41.5%, Pediatric Use 100%) at alpha=0.05, and RadGraph radiology at alpha=0.10 rejected 59.3% (GPT-4.1) / 19.6% (Llama-4-Maverick), both rejecting 100% of uncertain observations.",
+          "confidence": "high",
+          "implication": "The fraction of DPC codes/sentences flagged for human review is NOT one number — it must be measured per DPC section/category on our own gold set, and tightening alpha can collapse throughput. The human-in-loop error budget (review-time per document) is the true product constraint and must be measured, not assumed.",
+          "sources": ["https://arxiv.org/html/2603.00924"]
+        },
+        {
+          "finding": "Composing stages (de-id NER -> coding -> conformal check) multiplicatively decays end-to-end trust: under independence joint coverage is at most (1-alpha)^K = 72.9% for K=3 at alpha=0.1; empirically naive independent conformal prediction fell to 86.5% end-to-end (vs 90% per-stage) on a real 3-stage NER pipeline, while pipeline-aware PASC reached 96.4% and Bonferroni 93.4% at identical set size.",
+          "confidence": "high",
+          "implication": "The offline USB pipeline needs JOINT / pipeline-aware calibration across de-id NER + DPC coding + verifier, not per-stage tuning — otherwise stacking '90% stages' silently yields ~73-86% end-to-end. This is a concrete, adoptable design fix (PASC-style joint calibration).",
+          "sources": ["https://arxiv.org/pdf/2605.18812"]
+        },
+        {
+          "finding": "A large frequent-vs-rare code accuracy gap is systematic: a 35-study PRISMA review found median micro-F1 0.79 for frequent codes vs median macro-F1 only 0.42 for infrequent codes; individual component 'additive gains' (contrastive rerank, rule-filter +3F1, synthetic augmentation) were REFUTED 0-3 as cleanly additive.",
+          "confidence": "high",
+          "implication": "The DPC gold set must use hierarchical / clinical-context weighting and report frequent- and rare-code accuracy separately — a single blended number will hide the rare-code failures that matter clinically. Do not assume pipeline components give clean additive gains; they interact and must be measured jointly.",
+          "sources": ["https://www.medrxiv.org/content/10.1101/2025.07.30.25330916.full.pdf"]
+        },
+        {
+          "finding": "Quantization robustness is worst exactly at the product's 3B/4-bit corner: the scale/precision study covers only 7B-70B (NO 3B), finding larger models keep accuracy at 4-bit while smaller ones degrade more (Qwen-2.5 7B -6.8% avg vs 72B +0.7%; Llama-3.1 8B ~-10% vs 70B -4.5%). COUNTERWEIGHT: llama.cpp Q4_K_S loses only ~0.43% avg at 8B (GSM8K 77.33 vs 77.63 F16). The 'larger 4-bit model beats smaller high-precision at equal memory' claim was only weakly supported (refuted 1-2) — a live but unsettled risk.",
+          "confidence": "high",
+          "implication": "4-bit reasoning loss on a 3B DPC coder must be MEASURED, not assumed benign — the format-specific near-losslessness at 8B (Q4_K_S) may not hold for a reasoning-heavy coding task at 3B. Evaluate Q5/Q6/mixed precision for the coding path specifically, and keep the 'larger-model-at-4bit vs 3B' comparison as an open bake-off, not a closed decision.",
+          "sources": ["https://arxiv.org/abs/2405.03146", "https://arxiv.org/html/2601.14277v1"]
+        }
+      ],
+      "sources": [
+        "https://www.medrxiv.org/content/10.1101/2024.04.29.24306573.full.pdf",
+        "https://www.nature.com/articles/s44401-025-00018-3",
+        "https://www.medrxiv.org/content/10.1101/2024.10.15.24315526.full.pdf",
+        "https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2024.1406857/full",
+        "https://arxiv.org/abs/2606.08969",
+        "https://arxiv.org/html/2603.00924",
+        "https://arxiv.org/pdf/2605.18812",
+        "https://www.medrxiv.org/content/10.1101/2025.07.30.25330916.full.pdf",
+        "https://arxiv.org/abs/2405.03146",
+        "https://arxiv.org/html/2601.14277v1"
+      ]
+    },
+    {
+      "id": "q15",
+      "keyFindings": [
+        {
+          "finding": "The 7B anchor is confirmed exactly and — critically — the reference fine-tune is ITSELF LoRA-SFT, not full-parameter: JMedLLM-v1-7B (LoRA on Qwen2-7B) gained +7.7pp IgakuQA (44.6->52.3) and +17.6pp JMMLU-medical (33.2->50.8).",
+          "confidence": "high",
+          "implication": "Our constrained LoRA/QLoRA pipeline is method-matched to the very number we are trying to hit; the 7B uplift was NOT achieved by full SFT, so LoRA is not a handicap relative to the reference.",
+          "sources": ["https://arxiv.org/abs/2409.11783"]
+        },
+        {
+          "finding": "NO controlled 1B/3B/7B size-scan of SFT delta vs parameter count exists on JP or general medical QA; the exact fraction of the 7B uplift a ~3B captures is inferred from disjoint single-scale points (1.2B, 3.8B, 4B, 7B, 70B), not measured. Authors of both anchor papers explicitly disclaim extrapolation.",
+          "confidence": "high",
+          "implication": "The precise 3B-vs-7B SFT fraction remains a genuine evidence gap; the go/no-go cannot rest on published scaling and must be measured on our own model.",
+          "sources": ["https://arxiv.org/abs/2409.11783", "https://arxiv.org/pdf/2604.23801"]
+        },
+        {
+          "finding": "A strong ~3.8B base CAN reach a high medical-QA ceiling with a LARGE SFT increment: MedMobile (phi-3-mini) hit 75.7% MedQA-USMLE (smallest to pass the ~60% physician bar), SFT alone contributing +8.4pp of an 18.2pp pipeline. But 75.7% depends on multi-sample ensembling (multiplies CPU cost, adverse for offline llama.cpp); single-pass SFT+CoT ~68.3% still clears 60%.",
+          "confidence": "high",
+          "implication": "At ~3-4B with a strong modern base, SFT still delivers an order-comparable uplift — the small-model thesis is not dead on knowledge QA IF the base is strong; but plan single-pass (no ensembling) and expect ~68% not ~76%, and this is English MCQA not JP generation.",
+          "sources": ["https://arxiv.org/pdf/2410.09019"]
+        },
+        {
+          "finding": "Domain SFT survives at ~4B under CPU-class 4-bit GGUF serving: MedGemma 4B scored +6.8pp over Gemma-3 4B on full MedQA (53.3 vs 46.4, McNemar p<1e-4), on-family with our 4B/GGUF/llama.cpp deployment — though magnitude is smaller than the 7B JMedLLM deltas and the source is a single-author non-peer-reviewed preprint.",
+          "confidence": "medium",
+          "implication": "Weak but on-family confirmation that domain fine-tuning still helps at the product's scale under quantized CPU serving; treat magnitude as ~half the 7B uplift, not equal.",
+          "sources": ["https://arxiv.org/pdf/2604.23801"]
+        },
+        {
+          "finding": "The ~1B floor is HARD on knowledge-heavy Japanese QA: NCVC-slm-1 (1.2B, pretrained from scratch on 20-50B JP-medical tokens) stays below 20% on IgakuQA even after SFT (uplift only ~+5-6pp) vs GPT-4 ~77-80% — but this is an undertrained from-scratch base, so the ceiling conflates scale with weak-base/undertraining and should NOT be read as the ceiling of a strong modern 3B base.",
+          "confidence": "high",
+          "implication": "Sets the pessimistic floor: a weak/small/undertrained JP base cannot be SFT'd into knowledge-QA competence. The lesson is base-model quality is decisive; do not train from scratch, start from a strong 3B base.",
+          "sources": ["https://arxiv.org/abs/2412.16423"]
+        },
+        {
+          "finding": "MOST PRODUCT-RELEVANT: the same 1.2B NCVC-slm-1, after SFT, achieves the highest score on 6 of 8 JMED-LLM extraction/NER/classification tasks and BEATS GPT-4o on them (e.g. SMDIS kappa 0.98 vs 0.76), while failing only the two 'high inference ability' tasks (JMMLU-Med 0.44 vs 0.87). Task TYPE, not size, decides whether small suffices.",
+          "confidence": "high",
+          "implication": "Our de-identification/NER and structured extraction map onto the FAVORABLE class where even 1.2B beats GPT-4o after SFT; free-text knowledge reasoning (and knowledge-heavy coding) map onto the UNFAVORABLE class. This bifurcation should drive the architecture: small model for extraction/format, RAG+verifier+human for knowledge tasks.",
+          "sources": ["https://arxiv.org/abs/2412.16423"]
+        },
+        {
+          "finding": "The constrained QLoRA/LoRA pipeline sacrifices little domain uplift vs full SFT: at 70B full-FT beat LoRA by only +3.6pp USMLE-avg (0-6.2pp range, largest gap on reasoning-style MedMCQA +6.2pp); 4-bit QLoRA lands only 1-4pp below LoRA on clinical extraction, preserving most of a 10-20pp uplift. All evidence is 8B/70B Transformers, gentler quantization than at 3B.",
+          "confidence": "high",
+          "implication": "QLoRA is unlikely to be the binding constraint on uplift — but losing 2-4pp of a 10-20pp uplift is ~15-30% of it, concentrated on reasoning tasks, and unproven below 4B under int4. Budget a small QLoRA penalty, verify it at 3B/Q4.",
+          "sources": ["https://arxiv.org/html/2404.14779v1", "https://www.medrxiv.org/content/10.1101/2025.10.21.25338506.full.pdf"]
+        },
+        {
+          "finding": "Counter-signal at EXACTLY 3B: a QLoRA fine-tune of LLaMA-3.2-3B-Instruct on medical CoT produced ZERO ROUGE-L movement (0.3052 before and after) — a null SFT delta at the target size, but confounded by weak methodology (2 epochs, small data, ROUGE-L insensitivity/metric saturation).",
+          "confidence": "medium",
+          "implication": "SFT uplift at 3B is NOT automatic — training budget, data volume, and metric choice materially determine whether uplift appears. Our recipe (epochs, JP data volume, sensitive eval metric) is a live risk, not a given.",
+          "sources": ["https://arxiv.org/pdf/2510.05003"]
+        },
+        {
+          "finding": "A parameter-linear knowledge-capacity law (~2 bits/param peak; ~6B bits at 3B vs ~14B bits at 7B) predicts a lower absolute ceiling for ~3B specifically on knowledge-RECALL tasks, and int4/GGUF-4bit degrades capacity below that ceiling — established for Transformers, transfer to RWKV-7/Mamba unproven.",
+          "confidence": "medium",
+          "implication": "Provides a mechanistic reason to route knowledge-recall (ICD/DPC coding, drug facts) to RAG rather than model weights, and to prefer int8 or Q5/Q6 over Q4 on knowledge-bearing paths; the law does NOT penalize extraction/NER (low stored-knowledge need).",
+          "sources": ["https://arxiv.org/abs/2404.05405"]
+        },
+        {
+          "finding": "RAG does NOT reliably rescue small-model accuracy and can HURT it: at 3.8B, RAG cut MedQA by 12.6pp and k-shot by 9.4pp, attributed (hypothesis, not proven) to increased input length overwhelming the small model.",
+          "confidence": "high",
+          "implication": "For a ~3B offline copilot, RAG must be regression-tested per task, not assumed beneficial; long retrieved context is a risk. Keep retrieved context short and tightly ranked, and A/B RAG-on vs RAG-off on every task before shipping.",
+          "sources": ["https://arxiv.org/pdf/2410.09019"]
+        },
+        {
+          "finding": "The smallest INDEPENDENTLY peer-reviewed high-accuracy medical model is 7B (Meerkat-7B, 77.1% MedQA ensemble, Nature npj); MedMobile's 3.8B result sits at a lower-tier venue (BMJ Digital Health & AI). No peer-reviewed work validates a 3B model.",
+          "confidence": "high",
+          "implication": "Proven capability is bounded at 7B in top-tier venues; the ~3B case rests on lower-tier/preprint evidence, which raises the bar for our own in-house validation to be credible to a hospital.",
+          "sources": ["https://www.nature.com/articles/s41746-025-01653-8"]
+        }
+      ],
+      "sources": [
+        "https://arxiv.org/abs/2409.11783",
+        "https://arxiv.org/pdf/2604.23801",
+        "https://arxiv.org/pdf/2410.09019",
+        "https://arxiv.org/abs/2412.16423",
+        "https://arxiv.org/html/2404.14779v1",
+        "https://www.medrxiv.org/content/10.1101/2025.10.21.25338506.full.pdf",
+        "https://arxiv.org/pdf/2510.05003",
+        "https://arxiv.org/abs/2404.05405",
+        "https://www.nature.com/articles/s41746-025-01653-8"
+      ]
+    },
+    {
+      "id": "q16",
+      "keyFindings": [
+        {
+          "finding": "SFT uplift at ~1B is sharply concentrated on extraction/discriminative tasks: instruction-tuning the 1.2B Japanese-clinical NCVC-slm-1 lifted it from ~0.00 to the HIGHEST score of any model (beating GPT-4o) on 6 of 8 JMED-LLM tasks (all NER + classification/similarity: CRADE, SMDIS, JCSTS, MRNER-disease, MRNER-medicine, NRNER), while the two reasoning tasks (JMMLU-Med, RRTNM) stayed only 'comparable or below' GPT-4o.",
+          "confidence": "high",
+          "implication": "Our de-id/NER/structured-extraction path sits in the class where even a sub-3B model can reach or beat GPT-4o after SFT — extraction is winnable in-model. Reasoning-flavored tasks (knowledge QA, knowledge-heavy coding) are NOT closed by SFT and must be architected around (RAG, verifiers, human-in-loop).",
+          "sources": ["https://arxiv.org/abs/2412.16423", "https://arxiv.org/html/2412.16423v1", "https://www.anlp.jp/proceedings/annual_meeting/2025/pdf_dir/Q4-4.pdf"]
+        },
+        {
+          "finding": "The SFT deltas are quantitatively enormous and uneven by task type: NER MRNER-disease 0.00->0.90, NRNER 0.00->0.88 (both beat GPT-4o 0.54/0.39); classification SMDIS kappa 0.01->0.98, CRADE ~0.00->0.61, JCSTS 0.05->0.75; but reasoning JMMLU-Med gained only +0.13 kappa (0.13->0.26, ~+9pp) vs GPT-4o 0.82.",
+          "confidence": "high",
+          "implication": "Budget for near-SOTA extraction accuracy from SFT alone, but do NOT expect SFT to lift the coding/knowledge-reasoning path more than single-digit points. The extraction wins are partly in-distribution (SFT used JMED-LLM train split), so real-world de-id generalization must be re-measured on held-out Japanese clinical text.",
+          "sources": ["https://arxiv.org/abs/2412.16423", "https://arxiv.org/pdf/2412.16423"]
+        },
+        {
+          "finding": "For extraction/classification the data marginal-return curve is steeply diminishing: on Llama-3-8B, 200 labeled examples reached 88%, 1,000 reached 90.6%, peaking ~93.9% at 6,500 and flat to 10k; NER plateaued at ~300 examples; a survey places the PEFT elbow at 10k-40k and finds 1k-10k well-labeled examples beat 100k+ low-quality ones.",
+          "confidence": "medium",
+          "implication": "For our Japanese de-id/NER path, the first ~200-1,000 curated examples per task likely buy most of the uplift; a ~6,500-example 'sweet spot' is a realistic labeling target. This makes the extraction leg cheap to reach — the data bottleneck is quality/coverage, not raw volume. CAVEAT: numbers are English/German 8B transformers, extrapolated to our 3B non-transformer JP stack.",
+          "sources": ["https://arxiv.org/html/2407.13906v1", "https://arxiv.org/html/2503.21349v1", "https://arxiv.org/html/2411.09539"]
+        },
+        {
+          "finding": "Reasoning/coding/multihop tasks follow an UNSATURATING power law (P proportional to D^(1/b)) — a small seed set only aligns style/format while accuracy keeps rising with more examples far past 1k, whereas style and extraction saturate by ~100-1,000 examples.",
+          "confidence": "high",
+          "implication": "Closing any residual reasoning/coding need at ~3B would require LARGE (not small) SFT volume with steeply diminishing marginal accuracy — economically and data-availability-wise implausible for Japanese clinical coding. This is decisive evidence to route knowledge/reasoning to RAG + verifiers + human-in-loop rather than trying to SFT reasoning into the 3B model.",
+          "sources": ["https://arxiv.org/pdf/2410.03717", "https://openreview.net/forum?id=xZt6uSmL34"]
+        },
+        {
+          "finding": "The ~1B reasoning ceiling is a size limit SFT cannot overcome: NCVC-slm-1 reached only ~18-19% on the IgakuQA licensing exam (near 5-choice random) vs GPT-4 ~78%, 70B 67-80%, pass threshold ~75% — a ~60pp gap; SFT moved exam reasoning only ~+5pp. Authors explicitly conclude a larger model is needed.",
+          "confidence": "high",
+          "implication": "Do not expect a ~3B model (esp. from a weak/from-scratch base) to reach licensing-exam-grade medical reasoning. CAVEAT: NCVC's conclusion is confounded (tiny ~9B-token unique corpus, no controlled size sweep), and 3B from a strong modern base may do better — but this is a hard warning against the reasoning leg.",
+          "sources": ["https://arxiv.org/abs/2412.16423", "https://www.anlp.jp/proceedings/annual_meeting/2025/pdf_dir/Q4-4.pdf"]
+        },
+        {
+          "finding": "Extraction-parity generalizes above ~1B: a 24B Mistral-Small-3.2 + Self-Refine reached 91.54 pts = 97.8% of GPT-4.1 on Japanese medical PHI extraction ('clinically acceptable'); an 8B Llama-3 fine-tuned on only ~200-300 medical NER examples reached parity with a 70B zero-shot model.",
+          "confidence": "high",
+          "implication": "Corroborates that de-id/NER closes to near-cloud parity at small scale with very few examples — strong directional support for our extraction path. CAVEATS: 24B/8B are ABOVE our 3B budget; 24B parity used multi-pass Self-Refine (CPU-expensive for offline USB); German/JP-PHI not exactly our data.",
+          "sources": ["https://www.nature.com/articles/s41598-026-36904-5", "https://arxiv.org/html/2503.21349v1"]
+        }
+      ],
+      "sources": [
+        "https://arxiv.org/abs/2412.16423",
+        "https://arxiv.org/html/2412.16423v1",
+        "https://www.anlp.jp/proceedings/annual_meeting/2025/pdf_dir/Q4-4.pdf",
+        "https://arxiv.org/pdf/2412.16423",
+        "https://arxiv.org/html/2407.13906v1",
+        "https://arxiv.org/html/2503.21349v1",
+        "https://arxiv.org/html/2411.09539",
+        "https://arxiv.org/pdf/2410.03717",
+        "https://openreview.net/forum?id=xZt6uSmL34",
+        "https://www.nature.com/articles/s41598-026-36904-5"
+      ]
+    },
+    {
+      "id": "q17",
+      "keyFindings": [
+        {
+          "finding": "Zero primary evidence exists measuring RAG context-utilization or irrelevant-generation rates for RWKV-7 or Mamba-hybrid models at ~3B; the one study establishing the sub-7B RAG failure mode (arXiv:2603.11513) tested decoder-only transformers only, and the one ~3B SSM/hybrid characterization paper (arXiv:2507.12442) reports only systems metrics, no retrieval accuracy.",
+          "confidence": "high",
+          "implication": "RAG cannot be assumed usable in our ~3B non-transformer stack on faith. It is an UNVALIDATED risk that requires in-house benchmarking (naive one-pass RAG on a real Japanese clinical/QA set) before any clinical-documentation feature depends on retrieval.",
+          "sources": ["https://arxiv.org/abs/2603.11513", "https://arxiv.org/html/2507.12442v2"]
+        },
+        {
+          "finding": "On transformers below 7B, adding retrieval context is often net-NEGATIVE: it destroys 42-100% of answers the model previously knew, and 'irrelevant generation' (model ignores the context) dominates failures — 73% of oracle failures at 3B, up to 100% at 360M. The bottleneck is context UTILIZATION, not retrieval quality.",
+          "confidence": "high",
+          "implication": "Our baseline expectation for naive RAG at 3B should be pessimistic: bolting retrieval onto a small model can lower accuracy. Design must assume the model may ignore retrieved clinical context and hallucinate; verifiers / human-in-loop confirmation are mandatory, not optional.",
+          "sources": ["https://arxiv.org/abs/2603.11513"]
+        },
+        {
+          "finding": "Architectural theory predicts the failure mode is EQUAL OR WORSE for pure state-space models: fixed-size recurrent state makes Mamba/RWKV/H3 provably weaker at recall/copying (Jelassi 2024; Arora 2024 proven state-size-vs-recall Pareto tradeoff; arXiv:2507.00449 formal proof that SSMs cannot solve multi-query joint recall in sub-quadratic time) — recall being the exact capability RAG stresses.",
+          "confidence": "high",
+          "implication": "The pure-RWKV-7 path carries a structural headwind for retrieval-grounded generation. If RAG is load-bearing, an attention-injected HYBRID (even 1-in-8 attention layers) is architecturally safer than a pure recurrent model. Note the recall-deficit papers come from groups proposing competing architectures (mild bias).",
+          "sources": ["https://arxiv.org/abs/2402.01032", "https://arxiv.org/abs/2402.18668", "https://arxiv.org/abs/2507.00449"]
+        },
+        {
+          "finding": "The recall deficit is partly an OPTIMIZATION problem, not a hard expressivity ceiling: Okpekpe & Orvieto 2025 show Mamba/RWKV/DeltaNet CAN learn recall within a narrow learning-rate window; RWKV-7 'Goose' recalls 72.93% at 256 KV pairs on MQAR; inserting one attention layer into a Mamba stack restores perfect copying; Jamba-hybrid retrieves well (RULER 92.6).",
+          "confidence": "medium",
+          "implication": "The deficit does not transfer unchanged to RWKV-7 — there is a real lever. BUT this evidence is synthetic associative-recall at small scale, and the strong hybrid retrieval result (Jamba) is at 12B active/52B total params where attention layers likely drive retrieval, so it does NOT transfer to a small pure/near-pure recurrent model. Do not over-extrapolate to 'RWKV-7 uses retrieved context fine.'",
+          "sources": ["https://arxiv.org/pdf/2508.19029", "https://arxiv.org/abs/2402.01032", "https://arxiv.org/abs/2503.14456", "https://arxiv.org/pdf/2408.12570"]
+        },
+        {
+          "finding": "Naive one-pass RAG is the WORST-matched inference pattern for recurrent models: the weakness comes from ingesting the whole context at once. Chunk-and-summarize inference (Smooth Reading, arXiv:2507.19353, tested on RWKV-7/Mamba/DeltaNet/GLA at 3B) flips a 3B recurrent model from -5.68% to +3.61% vs transformers on LongBench.",
+          "confidence": "medium",
+          "implication": "Inference strategy is a concrete design lever: prefer chunk-and-summarize / iterative digestion over dumping full retrieved context in one prompt. CAVEAT: Smooth Reading digests the FULL context iteratively — it is not selective retrieval, so it is not direct proof that selective RAG works at 3B, and it adds latency (a real cost on CPU/llama.cpp).",
+          "sources": ["https://arxiv.org/pdf/2507.19353"]
+        },
+        {
+          "finding": "A concrete viable candidate exists: RWKV-7 2.9B 'Goose' (Apache-2.0, live HF repo, GGUF 4-bit quants confirmed for llama.cpp) matches 3B transformer SoTA on English and sets new 3B SoTA on GENERIC multilingual benchmarks (XCOPA/XNLI/XWinograd).",
+          "confidence": "high",
+          "implication": "The stack is buildable off-the-shelf today. But 'multilingual SoTA' is generic benchmarks, NOT Japanese clinical text, de-id, or ICD/DPC coding, and SoTA claims are by the model's own authors vs a self-selected transformer basket — treat as promising, not validated for our domain.",
+          "sources": ["https://arxiv.org/abs/2503.14456"]
+        },
+        {
+          "finding": "Quantization (GGUF 4-bit) effects on recall / context-utilization are UNSTUDIED in every cited source — our exact serving config (4-bit on llama.cpp) has no measured impact on the already-bounded recall of a fixed-state model.",
+          "confidence": "high",
+          "implication": "A quantization-vs-fp16 recall ablation must be added to our eval protocol (now folded into q24, which absorbed the dropped q14). We cannot assume 4-bit preserves whatever context-utilization the fp16 model has; degradation could compound the fixed-state recall deficit.",
+          "sources": ["https://arxiv.org/pdf/2507.19353", "https://arxiv.org/abs/2503.14456"]
+        }
+      ],
+      "sources": [
+        "https://arxiv.org/abs/2603.11513",
+        "https://arxiv.org/html/2507.12442v2",
+        "https://arxiv.org/abs/2402.01032",
+        "https://arxiv.org/abs/2402.18668",
+        "https://arxiv.org/abs/2507.00449",
+        "https://arxiv.org/pdf/2508.19029",
+        "https://arxiv.org/abs/2503.14456",
+        "https://arxiv.org/pdf/2408.12570",
+        "https://arxiv.org/pdf/2507.19353"
+      ]
+    },
+    {
+      "id": "q19",
+      "keyFindings": [
+        {
+          "finding": "No published precedent exists for a numeric non-inferiority (NI) margin that a Japanese hospital IRB / PMDA has accepted for an advisory, human-confirmed LLM drafting tool — this specific regulatory number does not exist in the evidence base.",
+          "confidence": "high",
+          "implication": "We cannot cite an accepted margin; we must DERIVE and pre-register one using an established framework and defend it. Budget time for a prospective ethics-board negotiation, not a lookup. This is the central residual uncertainty for the coding/documentation go-decision.",
+          "sources": ["https://www.ibanet.org/japan-ai-digital-health-regulations", "https://www.ibanet.org/japan-health-data-reforms-ai", "https://www.tokyofoundation.org/research/detail.php?id=980"]
+        },
+        {
+          "finding": "The defensible method to set a margin is the FDA/ICH E10 fixed-fraction ('95-95') approach: preserve a fraction (conventionally 50%, acknowledged arbitrary; 2/3 and 75% also used) of the comparator's effect; margins tighten for serious/irreversible harm and loosen when the new tool has a better safety profile.",
+          "confidence": "high",
+          "implication": "Our pre-registration should use fixed-fraction logic per endpoint: a LOOSE margin (~50% preservation) on low-severity error/omission COUNTS, and a STRICT margin on the high-severity AHRQ harm score. This is a drug-trial doctrine applied by analogy — regulators may instead prefer TOST/equivalence or an absolute threshold, so present it as one defensible option, not settled law.",
+          "sources": ["https://www.cmaj.ca/content/185/3/222", "https://pmc.ncbi.nlm.nih.gov/articles/PMC3113981/", "https://pmc.ncbi.nlm.nih.gov/articles/PMC12866653/", "https://pmc.ncbi.nlm.nih.gov/articles/PMC3764030/"]
+        },
+        {
+          "finding": "The credible human baseline is 1.82 ± 1.94 TOTAL errors (inaccuracies + omissions) per physician discharge-summary 'brief hospital course' narrative (vs 2.91 ± 2.54 for a GPT-4-class LLM, P<.001) — NOT a pure ~20% hallucination rate; the ~20% figure comes from separate GPT-4 ED studies and a different denominator.",
+          "confidence": "high",
+          "implication": "Do NOT combine '20% hallucination' and '1.82 errors/summary' into one baseline — they are different metrics. Anchor our NI target to 1.82 total errors/summary. A 50%-preservation logic implies a margin near ~0.9 extra errors/summary as a starting proposal for the count endpoint.",
+          "sources": ["https://www.medrxiv.org/content/10.1101/2024.09.29.24314562.full.pdf", "https://www.medrxiv.org/content/10.1101/2024.09.29.24314562v1"]
+        },
+        {
+          "finding": "On AHRQ 0-7 harm: per-error severity was equal between LLM and physician (1.35 vs 1.34, P=.99) but aggregate narrative-level harm was significantly higher for the LLM (0.84 vs 0.36, P<.001, gap ~0.48), both still <1 ('low harm'); severe errors (>=4) were rare (1 LLM vs 0 physician).",
+          "confidence": "high",
+          "implication": "Place the binding NI margin on ENCOUNTER-LEVEL aggregate AHRQ harm (where a real ~0.48 gap exists driven by error volume), not per-error harm (no gap). Note P=.99 is a null result, not a formal TOST equivalence proof — our eval must run a proper equivalence test.",
+          "sources": ["https://www.medrxiv.org/content/10.1101/2024.09.29.24314562.full.pdf", "https://www.medrxiv.org/content/10.1101/2024.09.29.24314562v1"]
+        },
+        {
+          "finding": "Every favorable accuracy/harm benchmark (structured pipeline 1.47% hallucination / 3.45% omission; 88% no-harm; sub-human major-error rates) was achieved with GPT-4 / Gemini-2.5-class FRONTIER models; the only ~3B-class data point (Phi-3 3.8B) produced the MOST hallucinations of any model tested (150 unsupported + 111 contradicted facts / 100 MIMIC-IV summaries).",
+          "confidence": "high",
+          "implication": "There is ZERO direct evidence a ~3B model (let alone a non-transformer RWKV/Mamba on CPU) meets any of these margins out-of-the-box, and the one small-model proxy is NEGATIVE on the exact failure mode (hallucination) that matters. The margin question is inseparable from an unproven small-model accuracy question — our own measured 3B error rate is the gating experiment.",
+          "sources": ["https://arxiv.org/pdf/2504.19061", "https://www.nature.com/articles/s41746-025-01670-7", "https://pmc.ncbi.nlm.nih.gov/articles/PMC13156793/"]
+        },
+        {
+          "finding": "Raw (non-human-confirmed) frontier output is far worse than the human baseline: GPT-4 hallucinated in 42% of ED summaries, omitted in 47%, was error-free in only 33% (GPT-3.5: 64% hallucination). The 'human-confirmed' step, not raw model output, is what closes the gap to the baseline.",
+          "confidence": "high",
+          "implication": "Any NI margin MUST be measured on the post-human-confirmation output, and our eval protocol must include the clinician-edit step in-loop. Advisory framing is load-bearing for the safety case; unedited draft metrics will fail NI and must not be the endpoint.",
+          "sources": ["https://journals.plos.org/digitalhealth/article?id=10.1371%2Fjournal.pdig.0000899"]
+        },
+        {
+          "finding": "For advisory + human-confirmed drafting the dominant residual error mode is OMISSION, not hallucination: frontier pilots show omission 25% > inaccuracy 20% > hallucination 2%, with 88% of unedited AI summaries rated 'no harm potential'.",
+          "confidence": "medium",
+          "implication": "Direct the error budget and verifier design at omission/coverage, and consider a separate (possibly looser) omission margin. Caveat: these favorable numbers are frontier-model, single-pilot; the 2% hallucination figure was explicitly REFUTED as generalizing to 3B and must not be transferred to our product.",
+          "sources": ["https://pmc.ncbi.nlm.nih.gov/articles/PMC13156793/", "https://pmc.ncbi.nlm.nih.gov/articles/PMC11023681/"]
+        },
+        {
+          "finding": "Engineering levers demonstrably reach sub-human error rates: a structured/verified pipeline (CREOLA) hit 1.47% sentence hallucination / 3.45% omission on 12,999 clinician-annotated sentences; LoRA fine-tuning of Llama3-8B on just 398 examples lifted a narrow classification task from 32.7% to 91.3%.",
+          "confidence": "medium",
+          "implication": "Gap-closing (structured decoding, verifiers, human-in-loop, small-data LoRA) can beat the human baseline in principle — but only demonstrated on 8B+/GPT-4-class models and, for LoRA, on classification not generation. Supports our gap-closing thesis directionally; provides no guarantee for a 3B non-transformer on generation/coding.",
+          "sources": ["https://www.nature.com/articles/s41746-025-01670-7", "https://arxiv.org/html/2503.21349v1"]
+        }
+      ],
+      "sources": [
+        "https://www.ibanet.org/japan-ai-digital-health-regulations",
+        "https://www.ibanet.org/japan-health-data-reforms-ai",
+        "https://www.tokyofoundation.org/research/detail.php?id=980",
+        "https://www.cmaj.ca/content/185/3/222",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC3113981/",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC12866653/",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC3764030/",
+        "https://www.medrxiv.org/content/10.1101/2024.09.29.24314562.full.pdf",
+        "https://www.medrxiv.org/content/10.1101/2024.09.29.24314562v1",
+        "https://arxiv.org/pdf/2504.19061",
+        "https://www.nature.com/articles/s41746-025-01670-7",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC13156793/",
+        "https://journals.plos.org/digitalhealth/article?id=10.1371%2Fjournal.pdig.0000899",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC11023681/",
+        "https://arxiv.org/html/2503.21349v1"
+      ]
+    }
+  ],
+  "openGaps": [],
+  "updatedAt": "2026-07-06T17:19:50Z"
+}

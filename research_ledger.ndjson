@@ -1,0 +1,12 @@
+{"ts":"2026-07-06T13:24:01Z","event":"RESEARCHED","question":"q1","confidence":"medium","goVerdict":"conditional-go","findings":8,"newQuestions":4}
+{"ts":"2026-07-06T13:48:04Z","event":"RESEARCHED","question":"q2","confidence":"medium","goVerdict":"conditional-go","findings":0,"newQuestions":2}
+{"ts":"2026-07-06T14:19:17Z","event":"RESEARCHED","question":"q3","confidence":"medium","goVerdict":"conditional-go","findings":11,"newQuestions":2}
+{"ts":"2026-07-06T14:38:27Z","event":"RESEARCHED","question":"q7","confidence":"medium","goVerdict":"conditional-go","findings":11,"newQuestions":2}
+{"ts":"2026-07-06T14:58:11Z","event":"RESEARCHED","question":"q11","confidence":"medium","goVerdict":"conditional-go","findings":9,"newQuestions":0}
+{"ts":"2026-07-06T15:20:49Z","event":"RESEARCHED","question":"q12","confidence":"medium","goVerdict":"conditional-go","findings":4,"newQuestions":1}
+{"ts":"2026-07-06T16:00:22Z","event":"RESEARCHED","question":"q13","confidence":"medium","goVerdict":"conditional-go","findings":9,"newQuestions":2}
+{"ts":"2026-07-06T16:24:05Z","event":"RESEARCHED","question":"q15","confidence":"medium","goVerdict":"conditional-go","findings":11,"newQuestions":0}
+{"ts":"2026-07-06T16:45:38Z","event":"RESEARCHED","question":"q16","confidence":"medium","goVerdict":"conditional-go","findings":6,"newQuestions":0}
+{"ts":"2026-07-06T17:02:00Z","event":"RESEARCHED","question":"q17","confidence":"medium","goVerdict":"conditional-go","findings":7,"newQuestions":1}
+{"ts": "2026-07-06T17:19:50Z", "event": "RESEARCHED", "question": "q19", "confidence": "medium", "goVerdict": "conditional-go", "findings": 8, "newQuestions": 1}
+{"ts":"2026-07-06T17:54:24Z","event":"CAMPAIGN_SYNTHESIZED","iteration":11,"researched":11,"verdict":"conditional-go","confidence":"medium","note":"Loop stopped: converged. q20 deep-research hit session usage limit (resets 04:40 JST); only researchable-minor + empirical questions remained. Final verdict written to ACCURACY_VERDICT.md instead of burning another heavy iteration."}
